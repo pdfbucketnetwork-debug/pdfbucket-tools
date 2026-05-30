@@ -12,14 +12,16 @@ const tools = [
   { id: "handwriting", icon: "✍️", label: "Text → Handwriting", desc: "Convert typed text to handwritten style", color: "#fb923c", tag: "Viral" },
 ];
 
+const ToolLoading = () => <div style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}>Loading tool...</div>;
+
 const toolComponents: Record<string, React.ComponentType> = {
-  compress: dynamic(() => import("./tools/ImageCompressor"), { ssr: false }),
-  resize: dynamic(() => import("./tools/ImageResizer"), { ssr: false }),
-  convert: dynamic(() => import("./tools/ImageConverter"), { ssr: false }),
-  qr: dynamic(() => import("./tools/QRGenerator"), { ssr: false }),
-  ocr: dynamic(() => import("./tools/TextExtractor"), { ssr: false }),
-  palette: dynamic(() => import("./tools/ColorPalette"), { ssr: false }),
-  handwriting: dynamic(() => import("./tools/TextHandwriting"), { ssr: false }),
+  compress: dynamic(() => import("./tools/ImageCompressor"), { ssr: false, loading: ToolLoading }),
+  resize: dynamic(() => import("./tools/ImageResizer"), { ssr: false, loading: ToolLoading }),
+  convert: dynamic(() => import("./tools/ImageConverter"), { ssr: false, loading: ToolLoading }),
+  qr: dynamic(() => import("./tools/QRGenerator"), { ssr: false, loading: ToolLoading }),
+  ocr: dynamic(() => import("./tools/TextExtractor"), { ssr: false, loading: ToolLoading }),
+  palette: dynamic(() => import("./tools/ColorPalette"), { ssr: false, loading: ToolLoading }),
+  handwriting: dynamic(() => import("./tools/TextHandwriting"), { ssr: false, loading: ToolLoading }),
 };
 
 export default function ToolsSection() {
