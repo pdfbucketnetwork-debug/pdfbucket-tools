@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 
 const tools = [
@@ -26,6 +26,39 @@ const toolComponents: Record<string, React.ComponentType> = {
 
 export default function ToolsSection() {
   const [active, setActive] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const toolId = searchParams.get("tool");
+      if (toolId && tools.some(t => t.id === toolId)) {
+        setActive(toolId);
+      } else {
+        setActive(null);
+      }
+    };
+
+    // Check initial URL
+    handlePopState();
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  const openTool = (id: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("tool", id);
+    window.history.pushState({}, "", url.toString());
+    setActive(id);
+  };
+
+  const closeTool = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("tool");
+    window.history.pushState({}, "", url.toString());
+    setActive(null);
+  };
+
   const ActiveTool = active ? toolComponents[active] : null;
   const activeTool = tools.find(t => t.id === active);
 
@@ -50,7 +83,7 @@ export default function ToolsSection() {
               key={tool.id}
               type="button"
               className="tool-card"
-              onClick={() => setActive(tool.id)}
+              onClick={() => openTool(tool.id)}
               style={{
                 textAlign: "left",
                 WebkitTapHighlightColor: "transparent",
@@ -96,7 +129,7 @@ export default function ToolsSection() {
         <div>
           <button
             type="button"
-            onClick={() => setActive(null)}
+            onClick={closeTool}
             style={{
               background: "none", border: "1px solid var(--border)", color: "var(--muted)",
               borderRadius: 8, padding: "10px 16px", cursor: "pointer", fontSize: 13,
