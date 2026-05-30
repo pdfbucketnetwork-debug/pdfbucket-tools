@@ -1,67 +1,7 @@
-"use client";
-import { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
-
-const tools = [
-  { id: "compress", icon: "🗜️", label: "Image Compressor", desc: "Reduce image file size without quality loss", color: "#6c63ff", tag: "Popular" },
-  { id: "resize", icon: "📐", label: "Image Resizer", desc: "Resize to any dimension or social preset", color: "#38bdf8", tag: "" },
-  { id: "convert", icon: "🔄", label: "Format Converter", desc: "Convert between PNG, JPEG, WEBP instantly", color: "#a78bfa", tag: "" },
-  { id: "qr", icon: "📱", label: "QR Code Generator", desc: "Create custom QR codes for any URL or text", color: "#34d399", tag: "New" },
-  { id: "ocr", icon: "📝", label: "Text Extractor (OCR)", desc: "Extract text from images and screenshots", color: "#f59e0b", tag: "" },
-  { id: "palette", icon: "🎨", label: "Color Palette", desc: "Extract dominant colors from any image", color: "#f472b6", tag: "Fun" },
-  { id: "handwriting", icon: "✍️", label: "Text → Handwriting", desc: "Convert typed text to handwritten style", color: "#fb923c", tag: "Viral" },
-];
-
-const ToolLoading = () => <div style={{ padding: 40, textAlign: "center", color: "var(--muted)" }}>Loading tool...</div>;
-
-const toolComponents: Record<string, React.ComponentType> = {
-  compress: dynamic(() => import("./tools/ImageCompressor"), { ssr: false, loading: ToolLoading }),
-  resize: dynamic(() => import("./tools/ImageResizer"), { ssr: false, loading: ToolLoading }),
-  convert: dynamic(() => import("./tools/ImageConverter"), { ssr: false, loading: ToolLoading }),
-  qr: dynamic(() => import("./tools/QRGenerator"), { ssr: false, loading: ToolLoading }),
-  ocr: dynamic(() => import("./tools/TextExtractor"), { ssr: false, loading: ToolLoading }),
-  palette: dynamic(() => import("./tools/ColorPalette"), { ssr: false, loading: ToolLoading }),
-  handwriting: dynamic(() => import("./tools/TextHandwriting"), { ssr: false, loading: ToolLoading }),
-};
+import Link from "next/link";
+import { toolsData } from "@/lib/toolsData";
 
 export default function ToolsSection() {
-  const [active, setActive] = useState<string | null>(null);
-
-  useEffect(() => {
-    const handlePopState = () => {
-      const searchParams = new URLSearchParams(window.location.search);
-      const toolId = searchParams.get("tool");
-      if (toolId && tools.some(t => t.id === toolId)) {
-        setActive(toolId);
-      } else {
-        setActive(null);
-      }
-    };
-
-    // Check initial URL
-    handlePopState();
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  const openTool = (id: string) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("tool", id);
-    window.history.pushState({}, "", url.toString());
-    setActive(id);
-  };
-
-  const closeTool = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete("tool");
-    window.history.pushState({}, "", url.toString());
-    setActive(null);
-  };
-
-  const ActiveTool = active ? toolComponents[active] : null;
-  const activeTool = tools.find(t => t.id === active);
-
   return (
     <section id="tools" style={{ padding: "80px 16px", maxWidth: 1200, margin: "0 auto" }}>
       {/* Header */}
@@ -75,91 +15,56 @@ export default function ToolsSection() {
         </p>
       </div>
 
-      {!active ? (
-        /* Tool grid */
-        <div className="tool-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-          {tools.map(tool => (
-            <button
-              key={tool.id}
-              type="button"
-              className="tool-card"
-              onClick={() => openTool(tool.id)}
-              style={{
-                textAlign: "left",
-                WebkitTapHighlightColor: "transparent",
-                touchAction: "manipulation",
-              }}
-            >
-              {tool.tag && (
-                <span style={{
-                  position: "absolute", top: 16, right: 16,
-                  background: "rgba(108,99,255,0.15)", color: "var(--accent2)",
-                  fontSize: 10, fontFamily: "Syne, sans-serif", fontWeight: 700,
-                  padding: "3px 8px", borderRadius: 50, letterSpacing: "0.06em"
-                }}>{tool.tag}</span>
-              )}
-              <div className="icon-box" style={{ background: `${tool.color}18` }}>
-                <span>{tool.icon}</span>
-              </div>
-              <h3 style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{tool.label}</h3>
-              <p style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>{tool.desc}</p>
-              <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 6, color: tool.color, fontSize: 13, fontWeight: 600 }}>
-                Use Tool <span>→</span>
-              </div>
-            </button>
-          ))}
-
-          {/* Coming soon cards */}
-          {[["🎵", "MP4 → MP3", "Extract audio from videos"], ["🌫️", "Background Remover", "AI-powered background removal"]].map(([icon, label, desc]) => (
-            <div key={String(label)} className="tool-card" style={{ opacity: 0.5, cursor: "not-allowed" }}>
-              <span style={{
-                position: "absolute", top: 16, right: 16,
-                background: "var(--border)", color: "var(--muted)",
-                fontSize: 10, fontFamily: "Syne, sans-serif", fontWeight: 700,
-                padding: "3px 8px", borderRadius: 50, letterSpacing: "0.06em"
-              }}>SOON</span>
-              <div className="icon-box" style={{ background: "var(--border)" }}><span>{icon}</span></div>
-              <h3 style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{label}</h3>
-              <p style={{ color: "var(--muted)", fontSize: 13 }}>{desc}</p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        /* Active tool view */
-        <div>
-          <button
-            type="button"
-            onClick={closeTool}
+      {/* Tool grid */}
+      <div className="tool-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+        {toolsData.map(tool => (
+          <Link
+            key={tool.id}
+            href={`/tools/${tool.slug}`}
+            className="tool-card"
             style={{
-              background: "none", border: "1px solid var(--border)", color: "var(--muted)",
-              borderRadius: 8, padding: "10px 16px", cursor: "pointer", fontSize: 13,
-              marginBottom: 24, display: "flex", alignItems: "center", gap: 6,
-              WebkitTapHighlightColor: "transparent", touchAction: "manipulation",
+              textAlign: "left",
+              WebkitTapHighlightColor: "transparent",
+              touchAction: "manipulation",
+              textDecoration: "none",
+              color: "inherit",
+              display: "block"
             }}
           >
-            ← Back to Tools
-          </button>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32 }}>
-            <div className="icon-box" style={{ background: `${activeTool?.color}18`, marginBottom: 0 }}>
-              {activeTool?.icon}
+            {tool.tag && (
+              <span style={{
+                position: "absolute", top: 16, right: 16,
+                background: "rgba(108,99,255,0.15)", color: "var(--accent2)",
+                fontSize: 10, fontFamily: "Syne, sans-serif", fontWeight: 700,
+                padding: "3px 8px", borderRadius: 50, letterSpacing: "0.06em"
+              }}>{tool.tag}</span>
+            )}
+            <div className="icon-box" style={{ background: `${tool.color}18` }}>
+              <span>{tool.icon}</span>
             </div>
-            <div>
-              <h2 style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: "1.5rem" }}>
-                {activeTool?.label}
-              </h2>
-              <p style={{ color: "var(--muted)", fontSize: 13 }}>{activeTool?.desc}</p>
+            <h3 style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{tool.label}</h3>
+            <p style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>{tool.desc}</p>
+            <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 6, color: tool.color, fontSize: 13, fontWeight: 600 }}>
+              Use Tool <span>→</span>
             </div>
-          </div>
+          </Link>
+        ))}
 
-          <div style={{
-            background: "var(--surface)", border: "1px solid var(--border)",
-            borderRadius: 20, padding: 28, maxWidth: 640
-          }}>
-            {ActiveTool && <ActiveTool />}
+        {/* Coming soon cards */}
+        {[["🎵", "MP4 → MP3", "Extract audio from videos"], ["🌫️", "Background Remover", "AI-powered background removal"]].map(([icon, label, desc]) => (
+          <div key={String(label)} className="tool-card" style={{ opacity: 0.5, cursor: "not-allowed" }}>
+            <span style={{
+              position: "absolute", top: 16, right: 16,
+              background: "var(--border)", color: "var(--muted)",
+              fontSize: 10, fontFamily: "Syne, sans-serif", fontWeight: 700,
+              padding: "3px 8px", borderRadius: 50, letterSpacing: "0.06em"
+            }}>SOON</span>
+            <div className="icon-box" style={{ background: "var(--border)" }}><span>{icon}</span></div>
+            <h3 style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{label}</h3>
+            <p style={{ color: "var(--muted)", fontSize: 13 }}>{desc}</p>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
     </section>
   );
 }
