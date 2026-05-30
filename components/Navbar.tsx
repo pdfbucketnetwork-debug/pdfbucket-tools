@@ -10,7 +10,7 @@ export default function Navbar() {
     ["Home", "/"],
     ["Tools", "/tools"],
     ["How it works", "/how-it-works"],
-    ["Free Forever", "/free-forever"],
+    ["Blog", "/blog"],
   ] as const;
 
   return (
