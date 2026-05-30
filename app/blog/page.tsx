@@ -30,8 +30,13 @@ const schema = {
   },
 };
 
-export default function BlogPage() {
-  const posts = getBlogPosts();
+export default async function BlogPage(props: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+  const searchParams = await props.searchParams;
+  const currentCategory = (searchParams?.category as string) || "All";
+  const allPosts = getBlogPosts();
+  const posts = currentCategory === "All" 
+    ? allPosts 
+    : allPosts.filter(p => p.category === currentCategory);
 
   return (
     <>
@@ -58,26 +63,35 @@ export default function BlogPage() {
       <section style={{ padding: "64px 24px 100px", maxWidth: 1200, margin: "0 auto" }}>
         {/* Category pills */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 40 }}>
-          {["All", "Image Tools", "Guides", "Social Media", "QR Codes", "Productivity", "Design", "Reviews"].map(cat => (
-            <span key={cat} style={{
-              padding: "6px 16px",
-              borderRadius: 50,
-              fontSize: 13,
-              fontWeight: 500,
-              background: cat === "All" ? "var(--accent)" : "var(--surface)",
-              color: cat === "All" ? "white" : "var(--muted)",
-              border: "1px solid var(--border)",
-              cursor: "pointer",
-            }}>
-              {cat}
-            </span>
-          ))}
+          {["All", "Image Tools", "Guides", "Social Media", "QR Codes", "Productivity", "Design", "Reviews"].map(cat => {
+            const isActive = currentCategory === cat;
+            return (
+              <Link href={cat === "All" ? "/blog" : `/blog?category=${encodeURIComponent(cat)}`} key={cat} style={{
+                padding: "6px 16px",
+                borderRadius: 50,
+                fontSize: 13,
+                fontWeight: 500,
+                background: isActive ? "var(--accent)" : "var(--surface)",
+                color: isActive ? "white" : "var(--muted)",
+                border: "1px solid var(--border)",
+                cursor: "pointer",
+                textDecoration: "none",
+              }}>
+                {cat}
+              </Link>
+            );
+          })}
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 24 }}>
           {posts.map(post => (
             <BlogCard key={post.slug} post={post} />
           ))}
+          {posts.length === 0 && (
+            <div style={{ padding: "40px", textAlign: "center", color: "var(--muted)", gridColumn: "1 / -1" }}>
+              No posts found for this category.
+            </div>
+          )}
         </div>
 
         {/* CTA */}
