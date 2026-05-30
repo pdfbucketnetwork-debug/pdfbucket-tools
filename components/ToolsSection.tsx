@@ -49,21 +49,6 @@ export default function ToolsSection() {
             </div>
           </Link>
         ))}
-
-        {/* Coming soon cards */}
-        {[["🎵", "MP4 → MP3", "Extract audio from videos"], ["🌫️", "Background Remover", "AI-powered background removal"]].map(([icon, label, desc]) => (
-          <div key={String(label)} className="tool-card" style={{ opacity: 0.5, cursor: "not-allowed" }}>
-            <span style={{
-              position: "absolute", top: 16, right: 16,
-              background: "var(--border)", color: "var(--muted)",
-              fontSize: 10, fontFamily: "Syne, sans-serif", fontWeight: 700,
-              padding: "3px 8px", borderRadius: 50, letterSpacing: "0.06em"
-            }}>SOON</span>
-            <div className="icon-box" style={{ background: "var(--border)" }}><span>{icon}</span></div>
-            <h3 style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{label}</h3>
-            <p style={{ color: "var(--muted)", fontSize: 13 }}>{desc}</p>
-          </div>
-        ))}
       </div>
     </section>
   );

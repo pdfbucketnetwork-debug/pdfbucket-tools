@@ -200,6 +200,58 @@ export const toolsData: ToolData[] = [
         { q: "Can I download the result?", a: "Yes, you can instantly export the final handwritten page as an image file to your device." }
       ]
     }
+  },
+  {
+    id: "audio-extractor",
+    slug: "mp4-to-mp3",
+    icon: "🎵",
+    label: "MP4 to MP3",
+    desc: "Extract audio from videos instantly",
+    color: "#ef4444",
+    tag: "New",
+    seo: {
+      title: "Free MP4 to MP3 Converter | Extract Audio from Video",
+      description: "Convert MP4 videos to MP3 audio files directly in your browser. 100% free, no file uploads, perfectly secure and private.",
+      keywords: ["mp4 to mp3", "extract audio from video", "video to audio converter", "free mp4 to mp3 converter online"],
+    },
+    content: {
+      h2: "Extract High-Quality Audio from Videos",
+      paragraphs: [
+        "If you have a video file and just want to listen to the audio track (like a podcast, a lecture, or a music video), our MP4 to MP3 converter is the perfect tool.",
+        "Unlike other services that require you to upload massive video files to their servers—which takes forever and compromises your privacy—our tool utilizes WebAssembly to run the industry-standard FFmpeg engine directly inside your browser. Your video never leaves your device!"
+      ],
+      faq: [
+        { q: "Does the video upload to a server?", a: "No! The entire video processing happens locally on your computer or phone using WebAssembly. Your files are 100% private." },
+        { q: "What is the quality of the extracted MP3?", a: "The tool extracts the audio track at a high-quality 192kbps MP3 format, preserving excellent sound fidelity." },
+        { q: "Is there a file size limit?", a: "Because it runs in your browser, it depends on your device's memory. Generally, videos up to 500MB process flawlessly." }
+      ]
+    }
+  },
+  {
+    id: "bg-remover",
+    slug: "background-remover",
+    icon: "🌫️",
+    label: "Background Remover",
+    desc: "AI-powered background removal",
+    color: "#10b981",
+    tag: "Magic",
+    seo: {
+      title: "Free AI Background Remover | Remove Image BG Online",
+      description: "Remove the background from any image instantly using on-device AI. 100% private, free, and creates perfect transparent PNGs.",
+      keywords: ["background remover", "remove background from image", "transparent background maker", "free AI background removal"],
+    },
+    content: {
+      h2: "Remove Image Backgrounds Instantly with AI",
+      paragraphs: [
+        "Cutting out subjects from photos used to require complex photo editing software. Now, our AI Background Remover does it for you in seconds with pixel-perfect accuracy.",
+        "The best part? It runs entirely on your device using an optimized ONNX machine learning model. This means your private photos are never uploaded to a cloud server, saving you bandwidth and guaranteeing complete privacy."
+      ],
+      faq: [
+        { q: "How does the background removal work?", a: "We use a lightweight, pre-trained AI vision model that is downloaded and executed directly in your browser using WebGL/WebAssembly. It automatically detects the main subject and masks out everything else." },
+        { q: "Why does it say 'Initializing AI' the first time?", a: "The first time you use the tool, your browser needs to download the AI model (a few megabytes). After that, it is cached and runs instantly for future images." },
+        { q: "Can I download the result with a transparent background?", a: "Yes! The tool automatically outputs a high-quality PNG file with a perfectly transparent background." }
+      ]
+    }
   }
 ];
 

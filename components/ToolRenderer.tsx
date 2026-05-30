@@ -11,6 +11,8 @@ const toolComponents: Record<string, React.ComponentType> = {
   ocr: dynamic(() => import("./tools/TextExtractor"), { ssr: false, loading: ToolLoading }),
   palette: dynamic(() => import("./tools/ColorPalette"), { ssr: false, loading: ToolLoading }),
   handwriting: dynamic(() => import("./tools/TextHandwriting"), { ssr: false, loading: ToolLoading }),
+  "audio-extractor": dynamic(() => import("./tools/VideoToAudio"), { ssr: false, loading: ToolLoading }),
+  "bg-remover": dynamic(() => import("./tools/BackgroundRemover"), { ssr: false, loading: ToolLoading }),
 };
 
 export default function ToolRenderer({ id }: { id: string }) {
