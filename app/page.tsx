@@ -43,7 +43,7 @@ export default function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppSchema) }} />
       <main>
         <Hero />
-        <ToolsSection />
+        <ToolsSection featuredOnly={true} />
         <FeaturesGrid />
         <FreeForever />
         <FAQ items={homeFAQ} title="Everything you need to know about PDFBucket" />

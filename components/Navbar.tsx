@@ -97,18 +97,7 @@ export default function Navbar() {
                 key={label}
                 href={href}
                 onClick={() => setOpen(false)}
-                style={{
-                  display: "block",
-                  color: "var(--text)",
-                  textDecoration: "none",
-                  padding: "16px 16px",
-                  fontSize: 16,
-                  fontWeight: 500,
-                  fontFamily: "Inter, sans-serif",
-                  borderRadius: 12,
-                  marginBottom: 4,
-                  background: "var(--bg2)"
-                }}
+                className="mobile-nav-link"
               >
                 {label}
               </Link>

@@ -14,27 +14,36 @@ const highlightKeywords = (text: string) => {
   });
 };
 
-export default function ToolsSection() {
+export default function ToolsSection({ featuredOnly = false }: { featuredOnly?: boolean }) {
+  const displayedTools = featuredOnly 
+    ? toolsData.filter(t => ["mp4-to-mp3", "background-remover", "format-converter", "image-compressor", "qr-generator"].includes(t.slug))
+    : toolsData;
+
   return (
     <section id="tools" style={{ padding: "100px 16px", background: "var(--bg2)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 72 }}>
         <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "2.6rem", fontWeight: 700, marginBottom: 16 }}>
-          Everything in one bucket
+          {featuredOnly ? "Most used tools" : "Everything in one bucket"}
         </h2>
         <p style={{ color: "var(--muted)", fontSize: 17, maxWidth: 500, margin: "0 auto", fontWeight: 400 }}>
-          No downloads. No signup. All tools run directly in your browser.
+          {featuredOnly 
+            ? "The essential tools you need to get things done fast." 
+            : "No downloads. No signup. All tools run directly in your browser."}
         </p>
       </div>
 
       {/* Tool grid */}
-      <div className="tool-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
-        {toolsData.map(tool => (
+      <div className="tool-grid" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 20 }}>
+        {displayedTools.map(tool => (
           <div
             key={tool.id}
             className="tool-card"
             style={{
+              width: "100%",
+              maxWidth: "calc(33.333% - 14px)",
+              minWidth: 300,
               color: "inherit",
               display: "flex",
               flexDirection: "column",
@@ -74,6 +83,14 @@ export default function ToolsSection() {
           </div>
         ))}
       </div>
+      
+      {featuredOnly && (
+        <div style={{ textAlign: "center", marginTop: 48 }}>
+          <Link href="/tools" className="btn-outline" style={{ display: "inline-block", textDecoration: "none" }}>
+            Explore All Tools
+          </Link>
+        </div>
+      )}
       </div>
     </section>
   );

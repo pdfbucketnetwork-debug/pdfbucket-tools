@@ -31,9 +31,7 @@ export default function Footer() {
           {/* Links */}
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             {links.map(([label, href]) => (
-              <Link key={label} href={href} style={{ color: "var(--muted)", textDecoration: "none", fontSize: 13, transition: "color 0.2s" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "var(--text)")}
-                onMouseLeave={e => (e.currentTarget.style.color = "var(--muted)")}>
+              <Link key={label} href={href} className="footer-link">
                 {label}
               </Link>
             ))}
