@@ -30,14 +30,14 @@ export default function ToolsSection() {
       {/* Tool grid */}
       <div className="tool-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
         {toolsData.map(tool => (
-          <Link
+          <div
             key={tool.id}
-            href={`/tools/${tool.slug}`}
             className="tool-card"
             style={{
-              textDecoration: "none",
               color: "inherit",
-              display: "block"
+              display: "flex",
+              flexDirection: "column",
+              position: "relative"
             }}
           >
             {tool.tag && (
@@ -57,10 +57,20 @@ export default function ToolsSection() {
               <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 17, margin: 0 }}>{tool.label}</h3>
             </div>
             
-            <p style={{ color: "var(--text)", opacity: 0.75, fontSize: 14.5, lineHeight: 1.6 }}>
+            <p style={{ color: "var(--text)", opacity: 0.75, fontSize: 14.5, lineHeight: 1.6, flex: 1, marginBottom: 24 }}>
               {highlightKeywords(tool.desc)}
             </p>
-          </Link>
+            
+            <div style={{ marginTop: "auto", display: "flex", justifyContent: "flex-end" }}>
+              <Link 
+                href={`/tools/${tool.slug}`} 
+                className="btn-primary" 
+                style={{ padding: "8px 20px", fontSize: 14, textDecoration: "none" }}
+              >
+                Open Tool
+              </Link>
+            </div>
+          </div>
         ))}
       </div>
     </section>

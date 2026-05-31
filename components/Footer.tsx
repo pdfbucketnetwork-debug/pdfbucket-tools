@@ -18,8 +18,8 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <Image src="/logo.png" alt="PDFBucket Logo" width={32} height={32} style={{ borderRadius: 6, objectFit: "contain" }} />
-              <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: "var(--text)", letterSpacing: "-0.01em" }}>
+              <Image src="/logo.png" alt="PDFBucket Logo" width={48} height={48} style={{ objectFit: "contain", transform: "scale(1.2)", transformOrigin: "center left" }} />
+              <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 18, color: "var(--text)", letterSpacing: "-0.01em" }}>
                 pdf<span style={{ color: "var(--accent)" }}>bucket</span>.online
               </span>
             </div>

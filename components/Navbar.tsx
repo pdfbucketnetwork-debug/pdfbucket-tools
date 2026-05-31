@@ -37,8 +37,8 @@ export default function Navbar() {
         }}>
           {/* Logo */}
           <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-            <Image src="/logo.png" alt="PDFBucket Logo" width={36} height={36} style={{ borderRadius: 8, objectFit: "contain" }} />
-            <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 20, color: "var(--text)", letterSpacing: "-0.02em" }}>
+            <Image src="/logo.png" alt="PDFBucket Logo" width={56} height={56} style={{ objectFit: "contain", transform: "scale(1.3)", transformOrigin: "center" }} />
+            <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 22, color: "var(--text)", letterSpacing: "-0.02em" }}>
               pdf<span style={{ color: "var(--accent)" }}>bucket</span>
             </span>
           </Link>
