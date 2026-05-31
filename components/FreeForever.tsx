@@ -10,7 +10,7 @@ export default function FreeForever() {
   ];
 
   return (
-    <section id="free" style={{ padding: "100px 24px", background: "var(--bg2)" }}>
+    <section id="free" style={{ padding: "100px 24px", background: "var(--bg)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 72 }}>
           <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "2.6rem", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 16 }}>

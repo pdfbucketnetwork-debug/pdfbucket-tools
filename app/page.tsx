@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Hero from "@/components/Hero";
+import ToolsSection from "@/components/ToolsSection";
 import FeaturesGrid from "@/components/FeaturesGrid";
+import FreeForever from "@/components/FreeForever";
 import FAQ from "@/components/FAQ";
 
 export const metadata: Metadata = {
@@ -41,7 +43,9 @@ export default function Home() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppSchema) }} />
       <main>
         <Hero />
+        <ToolsSection />
         <FeaturesGrid />
+        <FreeForever />
         <FAQ items={homeFAQ} title="Everything you need to know about PDFBucket" />
       </main>
     </>

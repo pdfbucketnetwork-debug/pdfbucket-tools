@@ -4,8 +4,8 @@ import Link from "next/link";
 export default function Hero() {
   return (
     <section style={{ 
-      minHeight: "90vh", display: "flex", alignItems: "center", justifyContent: "center",
-      position: "relative", overflow: "hidden", padding: "120px 24px 60px",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      position: "relative", overflow: "hidden", paddingTop: 160, paddingBottom: 64, paddingLeft: 24, paddingRight: 24,
       background: "var(--bg)"
     }}>
       <div style={{ maxWidth: 840, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>

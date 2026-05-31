@@ -16,8 +16,9 @@ const highlightKeywords = (text: string) => {
 
 export default function ToolsSection() {
   return (
-    <section id="tools" style={{ padding: "100px 16px", maxWidth: 1200, margin: "0 auto" }}>
-      {/* Header */}
+    <section id="tools" style={{ padding: "100px 16px", background: "var(--bg2)" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 72 }}>
         <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "2.6rem", fontWeight: 700, marginBottom: 16 }}>
           Everything in one bucket
@@ -72,6 +73,7 @@ export default function ToolsSection() {
             </div>
           </div>
         ))}
+      </div>
       </div>
     </section>
   );
