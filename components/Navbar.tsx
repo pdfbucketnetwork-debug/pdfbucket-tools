@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ThemeToggle } from "./ThemeToggle";
 
 export default function Navbar() {
@@ -36,12 +37,7 @@ export default function Navbar() {
         }}>
           {/* Logo */}
           <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: "var(--accent)", color: "white",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 18,
-            }}>🪣</div>
+            <Image src="/logo.png" alt="PDFBucket Logo" width={36} height={36} style={{ borderRadius: 8, objectFit: "contain" }} />
             <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 20, color: "var(--text)", letterSpacing: "-0.02em" }}>
               pdf<span style={{ color: "var(--accent)" }}>bucket</span>
             </span>

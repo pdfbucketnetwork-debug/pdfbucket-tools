@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
   const links = [
@@ -17,7 +18,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 10, background: "var(--accent)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🪣</div>
+              <Image src="/logo.png" alt="PDFBucket Logo" width={32} height={32} style={{ borderRadius: 6, objectFit: "contain" }} />
               <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: "var(--text)", letterSpacing: "-0.01em" }}>
                 pdf<span style={{ color: "var(--accent)" }}>bucket</span>.online
               </span>
