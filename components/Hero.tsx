@@ -4,68 +4,59 @@ import Link from "next/link";
 export default function Hero() {
   return (
     <section style={{ 
-      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      position: "relative", overflow: "hidden", padding: "100px 24px 60px"
+      minHeight: "90vh", display: "flex", alignItems: "center", justifyContent: "center",
+      position: "relative", overflow: "hidden", padding: "120px 24px 60px",
+      background: "var(--bg)"
     }}>
-      {/* Background orbs */}
-      <div style={{
-        position: "absolute", top: "20%", left: "50%", transform: "translateX(-50%)",
-        width: 600, height: 600, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} className="pulse-slow" />
-      <div style={{
-        position: "absolute", bottom: "10%", right: "10%",
-        width: 300, height: 300, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(56,189,248,0.08) 0%, transparent 70%)",
-        pointerEvents: "none",
-      }} />
-
-      <div style={{ maxWidth: 820, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
+      <div style={{ maxWidth: 840, margin: "0 auto", textAlign: "center", position: "relative", zIndex: 1 }}>
         
-        {/* Tag */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 28 }}>
-          <span className="tag">⚡ 100% Free · No Signup · Browser-Based</span>
+        {/* Subtle pill tag */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 32 }}>
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "var(--bg2)", color: "var(--text)",
+            border: "1px solid var(--border)", padding: "6px 16px",
+            borderRadius: 100, fontSize: 13, fontWeight: 500,
+            fontFamily: "Inter, sans-serif", letterSpacing: "0.01em"
+          }}>
+            <span style={{ color: "var(--accent)" }}>●</span> 100% Free · No Signup
+          </span>
         </div>
 
-        {/* Title */}
+        {/* Massive clean Title */}
         <h1 className="hero-title" style={{
-          fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: "3.4rem",
-          lineHeight: 1.1, letterSpacing: "-0.03em", marginBottom: 24, color: "var(--text)"
+          fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "4.2rem",
+          lineHeight: 1.05, letterSpacing: "-0.03em", marginBottom: 24, color: "var(--text)"
         }}>
-          Drop any file.{" "}
-          <span style={{ 
-            background: "linear-gradient(135deg, #6c63ff, #38bdf8)",
-            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
-          }}>
-            Get what you need.
-          </span>
+          All your file tools.<br/>
+          <span style={{ color: "var(--accent)" }}>One click away.</span>
         </h1>
 
-        {/* Subtitle */}
-        <p style={{ fontSize: 17, color: "var(--muted)", maxWidth: 540, margin: "0 auto 40px", lineHeight: 1.7, fontWeight: 300 }}>
-          10+ powerful tools — compress, convert, resize, remove backgrounds, generate QR codes and more. 
-          All free. All instant. Zero uploads to any server.
+        {/* Clean Subtitle */}
+        <p style={{ fontSize: 18, color: "var(--muted)", maxWidth: 580, margin: "0 auto 48px", lineHeight: 1.6, fontWeight: 400 }}>
+          Compress, convert, resize, and process images and files instantly. 
+          Everything runs entirely in your browser—secure, private, and unbelievably fast.
         </p>
 
-        {/* CTAs */}
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <Link href="/tools" className="btn-primary" style={{ fontSize: 15, padding: "14px 32px", textDecoration: "none" }}>
+        {/* Minimal CTAs */}
+        <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
+          <Link href="/tools" className="btn-primary" style={{ textDecoration: "none" }}>
             Explore Tools
           </Link>
-          <Link href="/how-it-works" className="btn-outline" style={{ fontSize: 15, padding: "14px 32px", textDecoration: "none" }}>
-            How it works →
+          <Link href="/how-it-works" className="btn-outline" style={{ textDecoration: "none" }}>
+            How it works
           </Link>
         </div>
 
-        {/* Stats */}
+        {/* Refined Stats */}
         <div style={{ 
-          display: "flex", gap: 40, justifyContent: "center", marginTop: 64, flexWrap: "wrap"
+          display: "flex", gap: 48, justifyContent: "center", marginTop: 80, flexWrap: "wrap",
+          paddingTop: 48, borderTop: "1px solid var(--border)", maxWidth: 640, margin: "80px auto 0"
         }}>
-          {[["10+", "Free Tools"], ["0", "Server Uploads"], ["100%", "Browser-Based"], ["∞", "No Limits"]].map(([num, label]) => (
+          {[["10+", "Free Tools"], ["0", "Uploads"], ["100%", "Private"], ["∞", "No Limits"]].map(([num, label]) => (
             <div key={label} style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: "1.8rem", color: "var(--text)", lineHeight: 1 }}>{num}</div>
-              <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4 }}>{label}</div>
+              <div style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: "2rem", color: "var(--text)", lineHeight: 1 }}>{num}</div>
+              <div style={{ fontSize: 14, color: "var(--muted)", marginTop: 8, fontWeight: 500 }}>{label}</div>
             </div>
           ))}
         </div>

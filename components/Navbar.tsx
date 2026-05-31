@@ -1,10 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const navLinks = [
     ["Home", "/"],
@@ -17,68 +24,61 @@ export default function Navbar() {
     <>
       <nav style={{
         position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000,
-        background: "var(--glass-bg)",
-        WebkitBackdropFilter: "blur(16px)",
-        backdropFilter: "blur(16px)",
-        borderBottom: "1px solid var(--border)",
+        background: scrolled ? "var(--glass-bg)" : "transparent",
+        WebkitBackdropFilter: scrolled ? "blur(20px)" : "none",
+        backdropFilter: scrolled ? "blur(20px)" : "none",
+        borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent",
+        transition: "all 0.3s ease",
       }}>
         <div style={{
-          maxWidth: 1200, margin: "0 auto", padding: "0 16px",
-          height: 64, display: "flex", alignItems: "center", justifyContent: "space-between"
+          maxWidth: 1200, margin: "0 auto", padding: "0 24px",
+          height: 72, display: "flex", alignItems: "center", justifyContent: "space-between"
         }}>
-
           {/* Logo */}
-          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
             <div style={{
-              width: 34, height: 34, borderRadius: 9,
-              background: "linear-gradient(135deg, #6c63ff, #38bdf8)",
+              width: 36, height: 36, borderRadius: 10,
+              background: "var(--accent)", color: "white",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 16,
+              fontSize: 18,
             }}>🪣</div>
-            <span style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 17, color: "var(--text)", letterSpacing: "-0.02em" }}>
+            <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 20, color: "var(--text)", letterSpacing: "-0.02em" }}>
               pdf<span style={{ color: "var(--accent)" }}>bucket</span>
             </span>
           </Link>
 
           {/* Desktop nav */}
-          <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 4 }}>
             {navLinks.map(([label, href]) => (
-              <Link key={label} href={href} style={{
-                color: "var(--muted)", textDecoration: "none", padding: "8px 14px",
-                borderRadius: 8, fontSize: 14, fontWeight: 500,
-              }}>
+              <Link key={label} href={href} className="nav-link">
                 {label}
               </Link>
             ))}
           </div>
 
           {/* Right side: ThemeToggle + CTA + Hamburger */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
             <ThemeToggle />
-            <Link href="/tools" className="btn-primary cta-btn" style={{ textDecoration: "none" }}>
-              Use Free Tools ↗
+            <Link href="/tools" className="btn-primary cta-btn" style={{ textDecoration: "none", padding: "10px 24px", fontSize: 14 }}>
+              Try Free
             </Link>
-            {/* Hamburger — only shown on mobile via CSS */}
+            {/* Hamburger */}
             <button
               type="button"
               aria-label="Toggle menu"
               className="mobile-menu-btn"
               style={{
-                background: "none",
+                background: "transparent",
                 border: "1px solid var(--border)",
                 color: "var(--text)",
-                borderRadius: 8,
-                width: 40,
-                height: 40,
+                borderRadius: 100,
+                width: 44,
+                height: 44,
                 cursor: "pointer",
                 fontSize: 20,
-                lineHeight: 1,
-                display: "none", /* shown via CSS */
+                display: "none",
                 alignItems: "center",
                 justifyContent: "center",
-                WebkitTapHighlightColor: "transparent",
-                touchAction: "manipulation",
-                userSelect: "none",
               }}
               onClick={() => setOpen(o => !o)}
             >
@@ -90,9 +90,11 @@ export default function Navbar() {
         {/* Mobile dropdown */}
         {open && (
           <div style={{
-            background: "var(--bg)",
+            background: "var(--surface)",
             borderTop: "1px solid var(--border)",
-            padding: "12px 16px 20px",
+            borderBottom: "1px solid var(--border)",
+            padding: "16px 24px 24px",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.1)"
           }}>
             {navLinks.map(([label, href]) => (
               <Link
@@ -103,11 +105,13 @@ export default function Navbar() {
                   display: "block",
                   color: "var(--text)",
                   textDecoration: "none",
-                  padding: "14px 0",
+                  padding: "16px 16px",
                   fontSize: 16,
                   fontWeight: 500,
-                  borderBottom: "1px solid var(--border)",
-                  WebkitTapHighlightColor: "transparent",
+                  fontFamily: "Inter, sans-serif",
+                  borderRadius: 12,
+                  marginBottom: 4,
+                  background: "var(--bg2)"
                 }}
               >
                 {label}

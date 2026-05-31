@@ -10,25 +10,24 @@ export default function FreeForever() {
   ];
 
   return (
-    <section id="free" style={{ padding: "80px 24px" }}>
+    <section id="free" style={{ padding: "100px 24px", background: "var(--bg2)" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <div style={{ textAlign: "center", marginBottom: 56 }}>
-          <span className="tag" style={{ marginBottom: 16, display: "inline-flex" }}>🆓 No Catch</span>
-          <h2 style={{ fontFamily: "Syne, sans-serif", fontSize: "2.2rem", fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 14 }}>
+        <div style={{ textAlign: "center", marginBottom: 72 }}>
+          <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "2.6rem", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 16 }}>
             Free forever. Seriously.
           </h2>
-          <p style={{ color: "var(--muted)", fontSize: 16, maxWidth: 440, margin: "0 auto" }}>
+          <p style={{ color: "var(--muted)", fontSize: 17, maxWidth: 540, margin: "0 auto" }}>
             We make money through non-intrusive ads. You get world-class tools at zero cost.
           </p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20 }}>
           {features.map(([icon, title, desc], i) => (
-            <div key={i} className="glass glass-hover" style={{ borderRadius: 14, padding: "22px 20px", display: "flex", gap: 14 }}>
-              <div style={{ fontSize: 26, lineHeight: 1 }}>{icon}</div>
+            <div key={i} className="glass" style={{ borderRadius: 16, padding: "28px 24px", display: "flex", gap: 20, alignItems: "flex-start", background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div style={{ fontSize: 28, lineHeight: 1, padding: 12, background: "var(--bg)", borderRadius: 12, border: "1px solid var(--border2)" }}>{icon}</div>
               <div>
-                <h3 style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 14, marginBottom: 5 }}>{title}</h3>
-                <p style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>{desc}</p>
+                <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 17, marginBottom: 6 }}>{title}</h3>
+                <p style={{ color: "var(--muted)", fontSize: 14.5, lineHeight: 1.5 }}>{desc}</p>
               </div>
             </div>
           ))}
@@ -36,18 +35,19 @@ export default function FreeForever() {
 
         {/* CTA Banner */}
         <div style={{
-          marginTop: 48, borderRadius: 20, padding: "48px 32px", textAlign: "center",
-          background: "linear-gradient(135deg, rgba(108,99,255,0.12), rgba(56,189,248,0.08))",
-          border: "1px solid rgba(108,99,255,0.2)"
+          marginTop: 80, borderRadius: 24, padding: "64px 32px", textAlign: "center",
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          boxShadow: "0 20px 40px -12px rgba(0,0,0,0.05)"
         }}>
-          <h2 style={{ fontFamily: "Syne, sans-serif", fontSize: "1.8rem", fontWeight: 800, marginBottom: 12 }}>
-            Ready to use pdfbucket?
+          <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "2.4rem", fontWeight: 700, marginBottom: 16 }}>
+            Ready to streamline your workflow?
           </h2>
-          <p style={{ color: "var(--muted)", marginBottom: 28, fontSize: 15 }}>
-            Start with any tool. No account. No download. Just results.
+          <p style={{ color: "var(--muted)", marginBottom: 36, fontSize: 17, maxWidth: 480, margin: "0 auto 36px" }}>
+            Start with any tool. No account required. No software to download.
           </p>
-          <a href="#tools" className="btn-primary" style={{ fontSize: 15, padding: "14px 36px", textDecoration: "none" }}>
-            Start Free ↗
+          <a href="#tools" className="btn-primary" style={{ fontSize: 16, padding: "16px 40px", textDecoration: "none" }}>
+            Start using tools
           </a>
         </div>
       </div>

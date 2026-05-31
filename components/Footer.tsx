@@ -17,8 +17,8 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: "linear-gradient(135deg, #6c63ff, #38bdf8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🪣</div>
-              <span style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text)" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 10, background: "var(--accent)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🪣</div>
+              <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 16, color: "var(--text)", letterSpacing: "-0.01em" }}>
                 pdf<span style={{ color: "var(--accent)" }}>bucket</span>.online
               </span>
             </div>
