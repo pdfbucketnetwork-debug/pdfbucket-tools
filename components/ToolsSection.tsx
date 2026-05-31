@@ -1,6 +1,19 @@
 import Link from "next/link";
 import { toolsData } from "@/lib/toolsData";
 
+const highlightKeywords = (text: string) => {
+  const keywords = ["png", "jpeg", "jpg", "webp", "mp4", "mp3", "ai", "ocr", "qr", "url", "hex", "audio", "video", "videos", "image", "images", "file", "text", "colors", "background", "handwritten", "quality", "dimension", "social"];
+  const regex = new RegExp(`\\b(${keywords.join("|")})\\b`, "gi");
+  const parts = text.split(regex);
+  
+  return parts.map((part, i) => {
+    if (keywords.includes(part.toLowerCase())) {
+      return <span key={i} style={{ color: "var(--text)", fontWeight: 600, opacity: 1 }}>{part}</span>;
+    }
+    return part;
+  });
+};
+
 export default function ToolsSection() {
   return (
     <section id="tools" style={{ padding: "80px 16px", maxWidth: 1200, margin: "0 auto" }}>
@@ -42,8 +55,10 @@ export default function ToolsSection() {
             <div className="icon-box" style={{ background: `${tool.color}18` }}>
               <span>{tool.icon}</span>
             </div>
-            <h3 style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 6 }}>{tool.label}</h3>
-            <p style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.5 }}>{tool.desc}</p>
+            <h3 style={{ fontFamily: "Syne, sans-serif", fontWeight: 700, fontSize: 16, marginBottom: 8 }}>{tool.label}</h3>
+            <p style={{ color: "var(--text)", opacity: 0.75, fontSize: 14, lineHeight: 1.6 }}>
+              {highlightKeywords(tool.desc)}
+            </p>
             <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 6, color: tool.color, fontSize: 13, fontWeight: 600 }}>
               Use Tool <span>→</span>
             </div>
