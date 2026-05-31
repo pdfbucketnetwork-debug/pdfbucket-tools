@@ -14,6 +14,7 @@ export type ToolData = {
   content: {
     h2: string;
     paragraphs: string[];
+    steps?: { name: string; text: string }[];
     faq: { q: string; a: string }[];
   };
 };
@@ -30,13 +31,18 @@ export const toolsData: ToolData[] = [
     seo: {
       title: "Free AI Background Remover | Remove Image BG Online",
       description: "Remove the background from any image instantly using on-device AI. 100% private, free, and creates perfect transparent PNGs.",
-      keywords: ["background remover", "remove background from image", "transparent background maker", "free AI background removal"],
+      keywords: ["background remover", "remove background from image", "transparent background maker", "free AI background removal", "image bg remover", "remove bg online free", "auto background remover"],
     },
     content: {
-      h2: "Remove Image Backgrounds Instantly with AI",
+      h2: "How to Remove Image Backgrounds Instantly",
       paragraphs: [
         "Cutting out subjects from photos used to require complex photo editing software. Now, our AI Background Remover does it for you in seconds with pixel-perfect accuracy.",
         "The best part? It runs entirely on your device using an optimized ONNX machine learning model. This means your private photos are never uploaded to a cloud server, saving you bandwidth and guaranteeing complete privacy."
+      ],
+      steps: [
+        { name: "Upload Image", text: "Drag and drop your image (JPG, PNG, or WEBP) into the drop zone." },
+        { name: "Automatic AI Removal", text: "Wait a few seconds while our local AI model automatically detects the subject and removes the background." },
+        { name: "Download PNG", text: "Click download to save your new image with a perfect, transparent background." }
       ],
       faq: [
         { q: "How does the background removal work?", a: "We use a lightweight, pre-trained AI vision model that is downloaded and executed directly in your browser using WebGL/WebAssembly. It automatically detects the main subject and masks out everything else." },
@@ -56,13 +62,18 @@ export const toolsData: ToolData[] = [
     seo: {
       title: "Free MP4 to MP3 Converter | Extract Audio from Video",
       description: "Convert MP4 videos to MP3 audio files directly in your browser. 100% free, no file uploads, perfectly secure and private.",
-      keywords: ["mp4 to mp3", "extract audio from video", "video to audio converter", "free mp4 to mp3 converter online"],
+      keywords: ["mp4 to mp3", "extract audio from video", "video to audio converter", "free mp4 to mp3 converter online", "mp4 to mp3 converter high quality", "convert mp4 to mp3 fast", "video to mp3 free"],
     },
     content: {
-      h2: "Extract High-Quality Audio from Videos",
+      h2: "How to Convert MP4 to MP3 Online",
       paragraphs: [
         "If you have a video file and just want to listen to the audio track (like a podcast, a lecture, or a music video), our MP4 to MP3 converter is the perfect tool.",
         "Unlike other services that require you to upload massive video files to their servers—which takes forever and compromises your privacy—our tool utilizes WebAssembly to run the industry-standard FFmpeg engine directly inside your browser. Your video never leaves your device!"
+      ],
+      steps: [
+        { name: "Select Video File", text: "Upload your MP4, MOV, or WEBM video file directly from your device." },
+        { name: "Extract Audio Track", text: "Our in-browser FFmpeg engine will instantly strip the video and isolate the high-quality audio track." },
+        { name: "Save MP3", text: "Download your newly extracted MP3 audio file immediately." }
       ],
       faq: [
         { q: "Does the video upload to a server?", a: "No! The entire video processing happens locally on your computer or phone using WebAssembly. Your files are 100% private." },
@@ -82,13 +93,18 @@ export const toolsData: ToolData[] = [
     seo: {
       title: "Free Image Compressor | Reduce JPG/PNG Size Online",
       description: "Compress images up to 80% without losing quality. Free browser-based image compressor for PNG, JPEG, and WEBP. No signup, 100% private.",
-      keywords: ["image compressor", "compress image", "reduce image size", "compress png", "compress jpg", "free image compressor online"],
+      keywords: ["image compressor", "compress image", "reduce image size", "compress png", "compress jpg", "free image compressor online", "image optimizer", "shrink image file size"],
     },
     content: {
       h2: "How to Compress Images Online for Free",
       paragraphs: [
         "Reducing your image file size is critical for website performance, email attachments, and saving storage space. Our Free Image Compressor uses advanced lossless and lossy algorithms to reduce file sizes by up to 80% without any perceptible drop in quality.",
         "Unlike cloud-based tools that upload your private photos to external servers, PDFBucket's Image Compressor processes everything entirely inside your web browser. This means your files never leave your device, guaranteeing 100% privacy and lightning-fast compression speeds."
+      ],
+      steps: [
+        { name: "Upload Photo", text: "Select a JPG, PNG, or WEBP image you want to compress." },
+        { name: "Adjust Compression", text: "Use the slider to adjust the compression level, balancing quality and file size." },
+        { name: "Download Compressed Image", text: "Click download to instantly save the optimized, much smaller image file to your device." }
       ],
       faq: [
         { q: "Does compressing an image reduce its quality?", a: "With lossless compression, the quality remains exactly the same while the file size drops. With slight lossy compression, the quality difference is virtually undetectable to the human eye, but the file size reduction is massive." },
@@ -108,13 +124,18 @@ export const toolsData: ToolData[] = [
     seo: {
       title: "Free Image Resizer | Resize Photos Online Instantly",
       description: "Resize images to exact pixel dimensions instantly. Perfect for Instagram, Twitter, and website optimization. Free, private, and no signup required.",
-      keywords: ["image resizer", "resize image", "change image dimensions", "resize photo online", "social media image resizer"],
+      keywords: ["image resizer", "resize image", "change image dimensions", "resize photo online", "social media image resizer", "change image resolution", "resize picture free"],
     },
     content: {
       h2: "How to Resize Images to Exact Dimensions",
       paragraphs: [
         "Whether you need to resize a photo for an Instagram post, a YouTube thumbnail, or just want to shrink a massive camera photo to a web-friendly size, our Free Image Resizer makes it instant and easy.",
         "Simply upload your image, enter your desired width and height, and download the perfectly sized result. The tool uses high-quality Lanczos resampling to ensure your images stay sharp and clear even when drastically changing their dimensions."
+      ],
+      steps: [
+        { name: "Select Image", text: "Upload the image you want to resize into the tool." },
+        { name: "Enter Dimensions", text: "Type in your exact target width and height in pixels, or select a social media preset." },
+        { name: "Download Resized Photo", text: "Click download to save your newly resized photo instantly." }
       ],
       faq: [
         { q: "How do I resize an image for Instagram?", a: "Instagram recommends 1080x1080 for square posts, and 1080x1350 for portrait posts. Simply enter those dimensions into the tool and resize your image." },
@@ -134,13 +155,18 @@ export const toolsData: ToolData[] = [
     seo: {
       title: "PNG to JPEG Converter | Free WEBP Converter Online",
       description: "Convert PNG to JPEG, JPG to WEBP, and more in seconds. The fastest browser-based image format converter. Free, no file uploads, 100% secure.",
-      keywords: ["jpg to png converter", "png to jpeg", "convert to webp", "image format converter", "free image converter online"],
+      keywords: ["jpg to png converter", "png to jpeg converter", "convert to webp", "image format converter", "free image converter online", "webp to png", "convert image format"],
     },
     content: {
-      h2: "Fastest Browser-Based Image Format Converter",
+      h2: "How to Convert Image Formats Online",
       paragraphs: [
         "Need to convert a heavy PNG to a lightweight JPEG? Or want to upgrade your website images to the next-gen WEBP format for faster loading speeds? Our format converter handles it all.",
         "There is no need to install bulky software or risk your privacy with cloud converters. Just drop your file, select the output format, and the browser handles the conversion instantly."
+      ],
+      steps: [
+        { name: "Upload Image", text: "Select the image file you want to convert." },
+        { name: "Select Target Format", text: "Choose your desired output format from the dropdown menu (e.g., JPEG, PNG, WEBP)." },
+        { name: "Convert & Download", text: "The conversion happens instantly. Click download to save your new file format." }
       ],
       faq: [
         { q: "How do I convert PNG to JPEG?", a: "Upload your PNG file, select JPEG as the target format from the dropdown, and click Download. The conversion happens instantly in your browser." },
@@ -160,13 +186,18 @@ export const toolsData: ToolData[] = [
     seo: {
       title: "Free QR Code Generator | Create QR Codes Online",
       description: "Generate static QR codes for links, text, and Wi-Fi instantly. Free, no signup, and the QR codes never expire.",
-      keywords: ["qr code generator", "create qr code", "free qr code maker", "generate qr code from link", "qr code no expiration"],
+      keywords: ["qr code generator", "create qr code", "free qr code maker", "generate qr code from link", "qr code no expiration", "static qr code creator"],
     },
     content: {
-      h2: "Create High-Quality QR Codes for Free",
+      h2: "How to Create High-Quality QR Codes",
       paragraphs: [
         "QR codes are essential for bridging the physical and digital worlds. Whether you need a QR code for a restaurant menu, a business card, or event flyers, our free QR code generator creates high-resolution codes instantly.",
         "Unlike many other services, the QR codes you generate here are 'static'—which means they are completely free forever, do not track your users, and will never expire."
+      ],
+      steps: [
+        { name: "Enter URL or Text", text: "Type or paste the web address, text message, or Wi-Fi information into the input box." },
+        { name: "Generate Code", text: "The QR code will automatically generate in real-time as you type." },
+        { name: "Download QR Image", text: "Click download to save the high-resolution QR code image to your device for printing or sharing." }
       ],
       faq: [
         { q: "Do these QR codes expire?", a: "No. The QR codes generated by PDFBucket are static, meaning the data is directly encoded into the image itself. They will work forever as long as the destination link is active." },
@@ -186,13 +217,18 @@ export const toolsData: ToolData[] = [
     seo: {
       title: "Extract Text from Image | Free OCR Tool Online",
       description: "Instantly copy text from images, screenshots, and scanned documents. Free browser-based OCR tool. 100% private, no signup required.",
-      keywords: ["extract text from image", "ocr online", "image to text converter", "copy text from screenshot", "free ocr tool"],
+      keywords: ["extract text from image", "ocr online", "image to text converter", "copy text from screenshot", "free ocr tool", "convert image to text", "photo to text"],
     },
     content: {
-      h2: "Extract Text from Images and Screenshots (OCR)",
+      h2: "How to Extract Text from Images (OCR)",
       paragraphs: [
         "Optical Character Recognition (OCR) technology allows you to convert images of typed, handwritten, or printed text into machine-encoded text. If you have a screenshot, a photo of a document, or a scanned PDF, our Text Extractor will digitize the text for you.",
         "We utilize state-of-the-art WebAssembly ports of the Tesseract OCR engine, meaning the heavy machine learning processing happens directly on your device CPU. No sensitive documents are ever transmitted over the internet."
+      ],
+      steps: [
+        { name: "Upload Image Document", text: "Upload a screenshot, photo, or scanned document containing text." },
+        { name: "Run OCR Engine", text: "Wait briefly as our local AI engine reads and identifies the characters in the image." },
+        { name: "Copy Text", text: "The extracted text will appear in a text box. You can instantly copy it to your clipboard." }
       ],
       faq: [
         { q: "How accurate is the text extraction?", a: "For clear, high-contrast printed text (like screenshots of articles), the accuracy is typically 99% or higher. Poor lighting, blurry images, or complex handwriting will reduce accuracy." },
@@ -212,13 +248,18 @@ export const toolsData: ToolData[] = [
     seo: {
       title: "Color Palette Generator | Extract Colors from Image",
       description: "Extract the dominant colors and hex codes from any image. Perfect free tool for designers and developers to build brand palettes.",
-      keywords: ["color palette generator", "extract colors from image", "image color picker", "get hex code from image", "find dominant color"],
+      keywords: ["color palette generator", "extract colors from image", "image color picker", "get hex code from image", "find dominant color", "color theme from image"],
     },
     content: {
-      h2: "Generate Stunning Color Palettes from Images",
+      h2: "How to Generate Color Palettes from Images",
       paragraphs: [
         "Finding the perfect color harmony is critical for design. Our Color Palette Generator analyzes any image you upload and mathematically determines the most dominant and visually striking colors present in the photo.",
         "This tool is incredibly useful for web developers, UI/UX designers, and digital artists who want to build a cohesive brand kit or theme based on reference photography. Click on any generated color to instantly copy its HEX code."
+      ],
+      steps: [
+        { name: "Upload Reference Image", text: "Select a vibrant photo or graphic you want to draw inspiration from." },
+        { name: "Extract Colors", text: "The tool will instantly analyze the pixels and group them into the most dominant color themes." },
+        { name: "Copy Hex Codes", text: "Click on any color block in the generated palette to instantly copy its HEX code to your clipboard." }
       ],
       faq: [
         { q: "How does the color extraction algorithm work?", a: "The tool utilizes color quantization (similar to the median-cut algorithm) to group millions of pixels into buckets based on color similarity, surfacing the most dominant visual clusters." },
@@ -238,13 +279,18 @@ export const toolsData: ToolData[] = [
     seo: {
       title: "Text to Handwriting Converter | Free Online Tool",
       description: "Convert digital text into realistic handwriting images. Choose from different fonts and ink colors. Perfect for assignments and digital notes.",
-      keywords: ["text to handwriting", "convert text to handwriting", "handwriting generator", "make typed text look handwritten", "realistic handwriting online"],
+      keywords: ["text to handwriting", "convert text to handwriting", "handwriting generator", "make typed text look handwritten", "realistic handwriting online", "typed to written text"],
     },
     content: {
-      h2: "Turn Digital Text into Realistic Handwriting",
+      h2: "How to Turn Digital Text into Realistic Handwriting",
       paragraphs: [
         "Want to add a personal touch to your digital notes, or need to submit an assignment that looks handwritten? Our Text to Handwriting converter takes your typed text and renders it onto a realistic paper background using natural-looking handwriting fonts.",
         "You can customize the ink color, font style, and paper type. Once you're satisfied with the preview, you can download the generated document as a high-quality image."
+      ],
+      steps: [
+        { name: "Enter Text", text: "Type or paste your digital text into the input field." },
+        { name: "Customize Style", text: "Select your preferred handwriting font, ink color (blue or black), and paper background style." },
+        { name: "Download Document", text: "Click export to download a realistic image of your handwritten text." }
       ],
       faq: [
         { q: "Is the generated handwriting realistic?", a: "Yes, we use specially curated fonts that mimic natural pen strokes and slight variations in alignment to make it look as authentic as possible." },
