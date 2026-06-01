@@ -298,6 +298,98 @@ export const toolsData: ToolData[] = [
         { q: "Can I download the result?", a: "Yes, you can instantly export the final handwritten page as an image file to your device." }
       ]
     }
+  },
+  {
+    id: "doc-to-pdf",
+    slug: "document-to-pdf",
+    icon: "📄",
+    label: "Document to PDF",
+    desc: "Convert Word DOCX and Text to PDF",
+    color: "#2563eb",
+    tag: "New",
+    seo: {
+      title: "Free DOCX to PDF Converter | Convert Word to PDF Online",
+      description: "Instantly convert Microsoft Word DOCX and plain TXT files to PDF directly in your browser. No server uploads, 100% secure and private.",
+      keywords: ["docx to pdf", "word to pdf converter", "txt to pdf", "convert document to pdf online", "free word to pdf", "private pdf converter"],
+    },
+    content: {
+      h2: "How to Convert Word and Text Documents to PDF",
+      paragraphs: [
+        "Need to convert a resume or essay into a professional PDF format before sending it? Our Document to PDF converter instantly handles Microsoft Word (.docx) and plain text (.txt) files.",
+        "Crucially, this tool operates entirely inside your web browser. This means your private documents and sensitive information are never uploaded to a remote server for processing."
+      ],
+      steps: [
+        { name: "Upload Document", text: "Drag and drop your .docx or .txt file into the upload zone." },
+        { name: "Browser Conversion", text: "Wait a moment while your browser parses the document and renders it into a standard PDF format." },
+        { name: "Download PDF", text: "Click download to save your highly-compatible, print-ready PDF." }
+      ],
+      faq: [
+        { q: "Is my document uploaded to a server?", a: "No. The entire conversion from DOCX/TXT to PDF happens locally on your device. This guarantees your data remains 100% private." },
+        { q: "Will my Word formatting be perfectly preserved?", a: "Because the conversion happens without Microsoft Office running on a server, complex layouts (like precise page breaks or intricate tables) may slightly differ. However, all text, images, and basic styling are cleanly extracted." },
+        { q: "Can I convert standard text files?", a: "Yes! You can upload any .txt file and convert it into a cleanly formatted, readable PDF." }
+      ]
+    }
+  },
+  {
+    id: "merge-pdf",
+    slug: "merge-pdf",
+    icon: "📑",
+    label: "Merge PDF",
+    desc: "Merge, split, and reorder PDF pages securely",
+    color: "#db2777",
+    tag: "Popular",
+    seo: {
+      title: "Free PDF Merger | Combine PDFs Online",
+      description: "Merge multiple PDF files, reorder pages, and combine documents directly in your browser. Fast, free, and completely secure.",
+      keywords: ["merge pdf", "combine pdf files", "reorder pdf pages", "free pdf merger online", "secure pdf merger"],
+    },
+    content: {
+      h2: "How to Merge and Reorder PDFs Securely",
+      paragraphs: [
+        "Managing multiple PDF documents can be a hassle, especially when you need to combine tax forms, reports, or scanned pages into a single file. Our PDF Merger lets you easily merge and reorder multiple PDFs.",
+        "Security is our top priority. By utilizing advanced client-side processing, your PDF documents are manipulated directly in your browser's memory. No files are ever sent to an external server."
+      ],
+      steps: [
+        { name: "Add PDFs", text: "Upload two or more PDF files that you wish to combine." },
+        { name: "Reorder Files", text: "Use the up and down arrows to rearrange the order in which the PDFs will be merged." },
+        { name: "Merge & Download", text: "Click Merge to combine all the pages into a single cohesive document, and instantly download the result." }
+      ],
+      faq: [
+        { q: "Is there a limit to how many PDFs I can merge?", a: "There is no strict limit, though extremely large files may be limited by your device's available memory since processing is local." },
+        { q: "Are my confidential PDFs safe?", a: "Absolutely. The files are merged locally on your computer. We do not store or process your documents on our servers." }
+      ]
+    }
+  },
+  {
+    id: "pdf-editor",
+    slug: "pdf-editor",
+    icon: "🖊️",
+    label: "Edit PDF",
+    desc: "Add text and images to your PDFs",
+    color: "#eab308",
+    tag: "New",
+    seo: {
+      title: "Free PDF Editor | Add Text and Images to PDF Online",
+      description: "Edit PDF documents by stamping custom text and uploading images. Add watermarks and annotations natively in your browser.",
+      keywords: ["pdf editor", "edit pdf online", "add text to pdf", "add image to pdf", "watermark pdf", "free pdf editor"],
+    },
+    content: {
+      h2: "How to Add Text and Images to a PDF",
+      paragraphs: [
+        "Need to quickly stamp 'CONFIDENTIAL' across a document or paste a company logo onto a PDF? Our PDF Editor makes it incredibly fast and completely secure.",
+        "Unlike complex editors, this tool runs entirely on your device. You can stamp text or overlay images onto your PDF without ever uploading your confidential files to a third-party server."
+      ],
+      steps: [
+        { name: "Upload PDF", text: "Select the PDF document you want to edit." },
+        { name: "Choose Overlay", text: "Select whether you want to add a text overlay or upload an image." },
+        { name: "Apply & Download", text: "Click apply to instantly stamp your overlay onto the PDF and download the modified file." }
+      ],
+      faq: [
+        { q: "Does this alter my original file?", a: "No, your original file remains untouched. The tool generates a brand new edited copy for you to download." },
+        { q: "Can I edit the existing typed text in my PDF?", a: "To ensure 100% privacy and run without a backend server, this tool supports *adding* new text and images (overlaying/stamping), rather than rewriting existing embedded fonts." },
+        { q: "Is the edited PDF high quality?", a: "Yes, the tool natively edits the PDF structure so text remains crisp and vector-based." }
+      ]
+    }
   }
 ];
 

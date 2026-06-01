@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { removeBackground, Config } from "@imgly/background-removal";
 import { UploadCloud, Image as ImageIcon, Download, Loader2, Sparkles } from "lucide-react";
-import Image from "next/image";
 
 export default function BackgroundRemover() {
   const [file, setFile] = useState<File | null>(null);
@@ -78,11 +77,10 @@ export default function BackgroundRemover() {
             borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)",
             background: "repeating-conic-gradient(#f0f0f0 0% 25%, transparent 0% 50%) 50% / 20px 20px",
           }}>
-            <Image
+            <img
               src={resultUrl || previewUrl!}
               alt="Preview"
-              fill
-              style={{ objectFit: "contain" }}
+              style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
             />
           </div>
 
