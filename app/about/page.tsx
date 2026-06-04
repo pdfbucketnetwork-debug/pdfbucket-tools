@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <div className="max-w-4xl mx-auto py-16 px-6 sm:px-12">
+    <div className="max-w-4xl mx-auto pt-32 pb-16 px-6 sm:px-12">
       <h1 className="text-4xl font-bold font-outfit mb-8 tracking-tight">About PDFBucket</h1>
       <div className="blog-content">
         <p>

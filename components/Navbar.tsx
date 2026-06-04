@@ -19,6 +19,8 @@ export default function Navbar() {
     ["Tools", "/tools"],
     ["How it works", "/how-it-works"],
     ["Blog", "/blog"],
+    ["About", "/about"],
+    ["Contact", "/contact"],
   ] as const;
 
   return (
