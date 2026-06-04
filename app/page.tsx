@@ -40,7 +40,7 @@ const webAppSchema = {
 export default function Home() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppSchema) }} />
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppSchema) }} />
       <main>
         <Hero />
         <ToolsSection featuredOnly={true} />

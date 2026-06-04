@@ -43,7 +43,7 @@ const itemListSchema = {
 export default function ToolsPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
       <ToolsSection />
       <div style={{ background: "var(--bg2)" }}>
         <FAQ items={toolsFAQ} title="Tools FAQ" />

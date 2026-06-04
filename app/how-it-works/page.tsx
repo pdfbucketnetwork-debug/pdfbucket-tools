@@ -39,7 +39,7 @@ const howFAQ = [
 export default function HowItWorksPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
       <HowItWorks />
       <div style={{ background: "var(--bg2)" }}>
         <FAQ items={howFAQ} title="How It Works — FAQ" />

@@ -33,14 +33,14 @@ export default function Navbar() {
         borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent",
         transition: "all 0.3s ease",
       }}>
-        <div style={{
+        <div className="navbar-padding" style={{
           maxWidth: 1200, margin: "0 auto", padding: "0 24px",
           height: 72, display: "flex", alignItems: "center", justifyContent: "space-between"
         }}>
           {/* Logo */}
           <Link href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
             <Image src="/logo.png" alt="PDFBucket Logo" width={56} height={56} style={{ objectFit: "contain", transform: "scale(1.3)", transformOrigin: "center" }} />
-            <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 22, color: "var(--text)", letterSpacing: "-0.02em" }}>
+            <span className="brand-text" style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: 22, color: "var(--text)", letterSpacing: "-0.02em" }}>
               pdf<span style={{ color: "var(--accent)" }}>bucket</span>
             </span>
           </Link>
@@ -55,7 +55,7 @@ export default function Navbar() {
           </div>
 
           {/* Right side: ThemeToggle + CTA + Hamburger */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+          <div className="nav-right-gap" style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
             <ThemeToggle />
             <Link href="/tools" className="btn-primary cta-btn" style={{ textDecoration: "none", padding: "10px 24px", fontSize: 14 }}>
               Try Free

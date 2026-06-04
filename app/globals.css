@@ -287,6 +287,14 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   .mobile-menu-btn { display: flex !important; }
   .cta-btn { padding: 8px 12px; font-size: 12px; }
   .tool-grid { grid-template-columns: 1fr 1fr !important; }
+  .navbar-padding { padding: 0 16px !important; }
+  .nav-right-gap { gap: 8px !important; }
+}
+
+@media (max-width: 480px) {
+  .brand-text { display: none !important; }
+  .cta-btn { padding: 8px 10px; font-size: 11px; }
+  .navbar-padding { padding: 0 12px !important; }
 }
 
 @keyframes spin {
