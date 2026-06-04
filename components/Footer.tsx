@@ -7,8 +7,10 @@ export default function Footer() {
     ["Tools", "/tools"],
     ["How it works", "/how-it-works"],
     ["Blog", "/blog"],
-    ["Sitemap", "/sitemap.xml"],
-    ["Contact", "mailto:hello@pdfbucket.online"],
+    ["About Us", "/about"],
+    ["Contact", "/contact"],
+    ["Privacy", "/privacy"],
+    ["Terms", "/terms"],
   ];
 
   return (
