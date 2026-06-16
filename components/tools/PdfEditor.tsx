@@ -236,18 +236,19 @@ export default function PdfEditor() {
     }
 
     if (mode === "text") {
+      // Deselect previous text if clicking elsewhere
+      setSelectedId(null);
       const id = `overlay_${Date.now()}`;
       const newOverlay: Overlay = {
         id, type: "text", page: pageNum,
-        x: coords.x, y: coords.y, width: 20, height: 5,
+        x: coords.x, y: coords.y - 1.2, width: 40, height: 5,
         value: "", fontSize, fontColor, bold: fontBold, italic: fontItalic,
       };
       const newOverlays = { ...overlays, [pageNum]: [...(overlays[pageNum] || []), newOverlay] };
       setOverlays(newOverlays);
       pushHistory(newOverlays);
       setSelectedId(id);
-      setMode("select");
-      showToast("Text placed — start typing");
+      // Stay in text mode so user can click again to add more text
       return;
     }
 
@@ -637,12 +638,19 @@ export default function PdfEditor() {
             else if (overlay.italic) font = helveticaOblique;
 
             const color = hexToRgb(overlay.fontColor || "#000000");
-            page.drawText(overlay.value, {
-              x: absX,
-              y: absY - (overlay.fontSize || 16),
-              size: overlay.fontSize || 16,
-              font,
-              color: rgb(color.r, color.g, color.b),
+            const fSize = overlay.fontSize || 16;
+            const lineHeight = fSize * 1.4;
+            // Support multi-line text
+            const lines = overlay.value.split("\n");
+            lines.forEach((line, lineIdx) => {
+              if (!line) return; // skip empty lines but keep spacing
+              page.drawText(line, {
+                x: absX,
+                y: absY - fSize - (lineIdx * lineHeight),
+                size: fSize,
+                font,
+                color: rgb(color.r, color.g, color.b),
+              });
             });
           }
 
@@ -1157,45 +1165,108 @@ export default function PdfEditor() {
               </div>
             ))}
 
-            {/* Text overlays */}
-            {currentPageOverlays.filter(o => o.type === "text").map(o => (
-              <div
-                key={o.id}
-                className={`pdf-overlay-element ${selectedId === o.id ? "selected" : ""}`}
-                style={{
-                  left: `${o.x}%`, top: `${o.y}%`,
-                  pointerEvents: mode === "select" || mode === "text" ? "auto" : "none",
-                }}
-                onPointerDown={e => handleElementPointerDown(o.id, e)}
-                onPointerMove={handleElementPointerMove}
-                onPointerUp={handleElementPointerUp}
-              >
-                <button className="pdf-overlay-delete" onClick={e => { e.stopPropagation(); setOverlays(prev => { const n = { ...prev, [currentPage]: (prev[currentPage] || []).filter(x => x.id !== o.id) }; pushHistory(n); return n; }); setSelectedId(null); }}>
-                  <X size={10} />
-                </button>
-                <input
-                  type="text"
-                  value={o.value || ""}
-                  onChange={e => updateOverlay(o.id, { value: e.target.value })}
-                  onPointerDown={e => e.stopPropagation()}
-                  placeholder="Type here..."
-                  autoFocus={selectedId === o.id}
+            {/* Text overlays — seamless inline editing like Word */}
+            {currentPageOverlays.filter(o => o.type === "text").map(o => {
+              const isEditing = selectedId === o.id;
+              return (
+                <div
+                  key={o.id}
+                  className={`pdf-text-overlay ${isEditing ? "editing" : ""}`}
                   style={{
-                    width: Math.max(80, ((o.value?.length || 0) + 4) * (o.fontSize || 16) * 0.6) + "px",
-                    background: "transparent",
-                    border: "none",
-                    outline: "none",
-                    fontSize: (o.fontSize || 16) + "px",
-                    fontWeight: o.bold ? 700 : 400,
-                    fontStyle: o.italic ? "italic" : "normal",
-                    color: o.fontColor || "#000",
-                    fontFamily: "Helvetica, Arial, sans-serif",
-                    padding: "2px 4px",
-                    caretColor: "var(--accent)",
+                    position: "absolute",
+                    left: `${o.x}%`,
+                    top: `${o.y}%`,
+                    cursor: mode === "select" ? "move" : "text",
+                    pointerEvents: mode === "select" || mode === "text" ? "auto" : "none",
+                    zIndex: isEditing ? 12 : 10,
                   }}
-                />
-              </div>
-            ))}
+                  onPointerDown={e => {
+                    if (mode === "text") {
+                      // In text mode, clicking existing text focuses it
+                      e.stopPropagation();
+                      setSelectedId(o.id);
+                      return;
+                    }
+                    handleElementPointerDown(o.id, e);
+                  }}
+                  onPointerMove={handleElementPointerMove}
+                  onPointerUp={handleElementPointerUp}
+                >
+                  {/* Delete button — only shows on hover */}
+                  <button className="pdf-text-delete" onClick={e => {
+                    e.stopPropagation();
+                    setOverlays(prev => {
+                      const n = { ...prev, [currentPage]: (prev[currentPage] || []).filter(x => x.id !== o.id) };
+                      pushHistory(n);
+                      return n;
+                    });
+                    setSelectedId(null);
+                  }}>
+                    <X size={10} />
+                  </button>
+                  <textarea
+                    value={o.value || ""}
+                    onChange={e => {
+                      const val = e.target.value;
+                      // Update overlay value without pushing to history on every keystroke
+                      setOverlays(prev => ({
+                        ...prev,
+                        [o.page]: (prev[o.page] || []).map(item =>
+                          item.id === o.id ? { ...item, value: val } : item
+                        )
+                      }));
+                    }}
+                    onBlur={() => {
+                      // Push to history when user finishes typing
+                      pushHistory(overlays);
+                    }}
+                    onPointerDown={e => e.stopPropagation()}
+                    onKeyDown={e => {
+                      // Prevent Delete/Backspace from triggering element deletion
+                      e.stopPropagation();
+                    }}
+                    ref={el => {
+                      // Auto-focus newly placed text
+                      if (isEditing && el && !el.dataset.focused) {
+                        el.focus();
+                        el.dataset.focused = "1";
+                      }
+                    }}
+                    rows={1}
+                    style={{
+                      width: Math.max(120, Math.max(
+                        ...((o.value || "").split("\n").map(line => line.length)),
+                        1
+                      ) * (o.fontSize || 16) * 0.62 + 24) + "px",
+                      minHeight: (o.fontSize || 16) * 1.5 + "px",
+                      height: "auto",
+                      background: "transparent",
+                      border: "none",
+                      outline: "none",
+                      resize: "none",
+                      overflow: "hidden",
+                      fontSize: (o.fontSize || 16) + "px",
+                      lineHeight: 1.4,
+                      fontWeight: o.bold ? 700 : 400,
+                      fontStyle: o.italic ? "italic" : "normal",
+                      color: o.fontColor || "#000",
+                      fontFamily: "Helvetica, Arial, sans-serif",
+                      padding: "0 2px",
+                      margin: 0,
+                      caretColor: "#1A73E8",
+                      letterSpacing: "0.01em",
+                      wordBreak: "break-word",
+                    }}
+                    onInput={e => {
+                      // Auto-grow textarea height
+                      const el = e.currentTarget;
+                      el.style.height = "auto";
+                      el.style.height = el.scrollHeight + "px";
+                    }}
+                  />
+                </div>
+              );
+            })}
 
             {/* Image & Signature overlays */}
             {currentPageOverlays.filter(o => o.type === "image" || o.type === "signature").map(o => (
