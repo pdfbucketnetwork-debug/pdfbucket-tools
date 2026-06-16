@@ -148,9 +148,13 @@ export default async function ToolPage(props: { params: Promise<{ slug: string }
 
         {/* Tool interactive area */}
         <div style={{
-          background: "var(--surface)", border: "1px solid var(--border)",
-          borderRadius: 24, padding: 32, maxWidth: 640, marginBottom: 64,
-          boxShadow: "0 20px 40px -12px rgba(0,0,0,0.05)"
+          background: tool.id === "pdf-editor" ? "transparent" : "var(--surface)",
+          border: tool.id === "pdf-editor" ? "none" : "1px solid var(--border)",
+          borderRadius: 24,
+          padding: tool.id === "pdf-editor" ? 0 : 32,
+          maxWidth: tool.id === "pdf-editor" ? "100%" : 640,
+          marginBottom: 64,
+          boxShadow: tool.id === "pdf-editor" ? "none" : "0 20px 40px -12px rgba(0,0,0,0.05)"
         }}>
           <ToolRenderer id={tool.id} />
         </div>

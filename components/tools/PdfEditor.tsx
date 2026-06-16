@@ -1,171 +1,609 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, File as FileIcon, Download, Loader2, Type, Image as ImageIcon, Eraser, Settings2, X } from "lucide-react";
-import { PDFDocument, rgb } from "pdf-lib";
+import {
+  UploadCloud, Download, Loader2, Type, Image as ImageIcon,
+  Eraser, X, Pen, Square, Circle, Minus, ArrowRight,
+  Highlighter, PenTool, Undo2, Redo2, ZoomIn, ZoomOut,
+  ChevronLeft, ChevronRight, Bold, Italic, Trash2, Check
+} from "lucide-react";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-// Initialize PDF.js worker
 if (typeof window !== "undefined") {
   pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 }
 
-type OverlayType = "text" | "image" | "whiteout";
+// ─── Types ───
+type ToolMode = "select" | "text" | "draw" | "rect" | "circle" | "line" | "arrow" | "highlight" | "image" | "signature" | "eraser";
 
 interface Point { x: number; y: number; }
 
 interface Overlay {
   id: string;
-  type: OverlayType;
-  x: number; // percentage (0-100)
-  y: number; // percentage (0-100)
-  width: number;
-  height: number;
-  value?: string; // for text
-  file?: File; // for image
-  dataUrl?: string; // for image preview
-  points?: Point[]; // for whiteout paths
+  type: ToolMode;
+  page: number;
+  x: number; // percentage
+  y: number; // percentage
+  width: number; // percentage
+  height: number; // percentage
+  // Text
+  value?: string;
+  fontSize?: number;
+  fontColor?: string;
+  bold?: boolean;
+  italic?: boolean;
+  // Draw / eraser
+  points?: Point[];
+  strokeColor?: string;
+  strokeWidth?: number;
+  // Shape
+  fillColor?: string;
+  // Image
+  dataUrl?: string;
+  // Highlight
+  highlightColor?: string;
+  opacity?: number;
+  // Signature
+  signatureDataUrl?: string;
 }
 
+type HistoryEntry = {
+  overlays: Record<number, Overlay[]>;
+};
+
+// ─── Constants ───
+const FONT_SIZES = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 64, 72];
+const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const HIGHLIGHT_COLORS = ["#FBBF24", "#34D399", "#60A5FA", "#F472B6", "#FB923C"];
+const DRAW_COLORS = ["#000000", "#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899"];
+const STROKE_WIDTHS = [1, 2, 3, 5, 8];
+
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
+
 export default function PdfEditor() {
+  // ─── File State ───
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState("");
 
-  const [numPages, setNumPages] = useState<number>(0);
-  const [mode, setMode] = useState<OverlayType | null>(null);
-  
-  // Store overlays per page (1-indexed based on react-pdf)
+  // ─── PDF State ───
+  const [numPages, setNumPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [zoom, setZoom] = useState(1);
+
+  // ─── Tool State ───
+  const [mode, setMode] = useState<ToolMode>("select");
   const [overlays, setOverlays] = useState<Record<number, Overlay[]>>({});
-  
-  // State for image upload when in image mode
-  const [pendingImage, setPendingImage] = useState<{ file: File, dataUrl: string } | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // Drawing state
+  // ─── Text Tool Options ───
+  const [fontSize, setFontSize] = useState(16);
+  const [fontColor, setFontColor] = useState("#000000");
+  const [fontBold, setFontBold] = useState(false);
+  const [fontItalic, setFontItalic] = useState(false);
+
+  // ─── Draw / Shape Options ───
+  const [drawColor, setDrawColor] = useState("#000000");
+  const [drawWidth, setDrawWidth] = useState(3);
+  const [shapeFill, setShapeFill] = useState("transparent");
+  const [shapeStroke, setShapeStroke] = useState("#000000");
+
+  // ─── Highlight ───
+  const [highlightColor, setHighlightColor] = useState("#FBBF24");
+
+  // ─── Drawing State ───
   const [isDrawing, setIsDrawing] = useState(false);
-  const [currentPathId, setCurrentPathId] = useState<string | null>(null);
-  const containerRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const [drawingOverlayId, setDrawingOverlayId] = useState<string | null>(null);
+  const [shapeStart, setShapeStart] = useState<Point | null>(null);
 
+  // ─── Drag State ───
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
+
+  // ─── Resize State ───
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeCorner, setResizeCorner] = useState<string>("");
+  const [resizeStart, setResizeStart] = useState<{ x: number; y: number; ox: number; oy: number; ow: number; oh: number } | null>(null);
+
+  // ─── History ───
+  const [history, setHistory] = useState<HistoryEntry[]>([{ overlays: {} }]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+
+  // ─── Image Upload ───
+  const [pendingImage, setPendingImage] = useState<{ file: File; dataUrl: string } | null>(null);
+
+  // ─── Signature Modal ───
+  const [showSignature, setShowSignature] = useState(false);
+  const [sigMode, setSigMode] = useState<"draw" | "type">("draw");
+  const [sigText, setSigText] = useState("");
+  const sigCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [sigDrawing, setSigDrawing] = useState(false);
+
+  // ─── Toast ───
+  const [toast, setToast] = useState<string | null>(null);
+
+  const pageContainerRef = useRef<HTMLDivElement>(null);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(null);
+    if (toastTimer) clearTimeout(toastTimer);
+    setTimeout(() => setToast(msg), 10);
+    toastTimer = setTimeout(() => setToast(null), 2000);
+  }, []);
+
+  // ─── Dropzone ───
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { "application/pdf": [".pdf"] },
     maxFiles: 1,
-    onDrop: (acceptedFiles) => {
-      setFile(acceptedFiles[0]);
-      setResultUrl(null);
-      setError("");
-      setOverlays({});
-      setMode(null);
+    onDrop: (accepted) => {
+      if (accepted[0]) {
+        setFile(accepted[0]);
+        setResultUrl(null);
+        setError("");
+        setOverlays({});
+        setMode("select");
+        setCurrentPage(1);
+        setZoom(1);
+        setHistory([{ overlays: {} }]);
+        setHistoryIndex(0);
+        setSelectedId(null);
+      }
     },
   });
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
-  };
+  // ─── History Management ───
+  const pushHistory = useCallback((newOverlays: Record<number, Overlay[]>) => {
+    setHistory(prev => {
+      const trimmed = prev.slice(0, historyIndex + 1);
+      return [...trimmed, { overlays: JSON.parse(JSON.stringify(newOverlays)) }];
+    });
+    setHistoryIndex(prev => prev + 1);
+  }, [historyIndex]);
 
-  const getCoordinates = (e: React.PointerEvent<HTMLDivElement>, rect: DOMRect) => {
-    return {
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
+  const undo = useCallback(() => {
+    if (historyIndex <= 0) return;
+    const newIndex = historyIndex - 1;
+    setHistoryIndex(newIndex);
+    setOverlays(JSON.parse(JSON.stringify(history[newIndex].overlays)));
+    setSelectedId(null);
+    showToast("Undone");
+  }, [historyIndex, history, showToast]);
+
+  const redo = useCallback(() => {
+    if (historyIndex >= history.length - 1) return;
+    const newIndex = historyIndex + 1;
+    setHistoryIndex(newIndex);
+    setOverlays(JSON.parse(JSON.stringify(history[newIndex].overlays)));
+    setSelectedId(null);
+    showToast("Redone");
+  }, [historyIndex, history, showToast]);
+
+  // ─── Keyboard Shortcuts ───
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z") {
+        e.preventDefault();
+        if (e.shiftKey) redo();
+        else undo();
+      }
+      if (e.key === "Delete" || e.key === "Backspace") {
+        if (selectedId && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+          e.preventDefault();
+          deleteSelected();
+        }
+      }
+      if (e.key === "Escape") {
+        setSelectedId(null);
+        setMode("select");
+      }
     };
-  };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedId, undo, redo]);
 
-  const handlePointerDown = (pageNumber: number, e: React.PointerEvent<HTMLDivElement>) => {
-    if (!mode) return;
+  const deleteSelected = useCallback(() => {
+    if (!selectedId) return;
+    const newOverlays = { ...overlays };
+    for (const page of Object.keys(newOverlays)) {
+      const p = Number(page);
+      newOverlays[p] = newOverlays[p].filter(o => o.id !== selectedId);
+    }
+    setOverlays(newOverlays);
+    pushHistory(newOverlays);
+    setSelectedId(null);
+    showToast("Element deleted");
+  }, [selectedId, overlays, pushHistory, showToast]);
+
+  // ─── Coordinate Helpers ───
+  const getCoords = (e: React.PointerEvent<HTMLDivElement>, rect: DOMRect): Point => ({
+    x: ((e.clientX - rect.left) / rect.width) * 100,
+    y: ((e.clientY - rect.top) / rect.height) * 100,
+  });
+
+  // ─── Canvas Interaction Handlers ───
+  const handleCanvasPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const coords = getCoordinates(e, rect);
+    const coords = getCoords(e, rect);
+    const pageNum = currentPage;
 
-    if (mode === "whiteout") {
-      setIsDrawing(true);
-      const newId = Date.now().toString();
-      setCurrentPathId(newId);
+    if (mode === "select") {
+      setSelectedId(null);
+      return;
+    }
+
+    if (mode === "text") {
+      const id = `overlay_${Date.now()}`;
       const newOverlay: Overlay = {
-        id: newId,
-        type: "whiteout",
-        x: coords.x,
-        y: coords.y,
-        width: 0, height: 0,
-        points: [coords]
+        id, type: "text", page: pageNum,
+        x: coords.x, y: coords.y, width: 20, height: 5,
+        value: "", fontSize, fontColor, bold: fontBold, italic: fontItalic,
       };
-      setOverlays(prev => ({ ...prev, [pageNumber]: [...(prev[pageNumber] || []), newOverlay] }));
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } else {
-      // Text or Image click-to-place
-      if (mode === "image" && !pendingImage) {
-        alert("Please upload an image first using the sidebar.");
+      const newOverlays = { ...overlays, [pageNum]: [...(overlays[pageNum] || []), newOverlay] };
+      setOverlays(newOverlays);
+      pushHistory(newOverlays);
+      setSelectedId(id);
+      setMode("select");
+      showToast("Text placed — start typing");
+      return;
+    }
+
+    if (mode === "image") {
+      if (!pendingImage) {
+        showToast("Upload an image first");
         return;
       }
+      const id = `overlay_${Date.now()}`;
       const newOverlay: Overlay = {
-        id: Date.now().toString(),
-        type: mode,
-        x: coords.x,
-        y: coords.y,
-        width: mode === "image" ? 30 : 20,
-        height: mode === "image" ? 20 : 5,
-        value: mode === "text" ? "" : undefined, // Empty starting value
-        file: mode === "image" ? pendingImage?.file : undefined,
-        dataUrl: mode === "image" ? pendingImage?.dataUrl : undefined,
+        id, type: "image", page: pageNum,
+        x: coords.x - 10, y: coords.y - 8,
+        width: 20, height: 16,
+        dataUrl: pendingImage.dataUrl,
       };
-      setOverlays(prev => ({ ...prev, [pageNumber]: [...(prev[pageNumber] || []), newOverlay] }));
-      
-      // Reset mode after placing image so they don't accidentally place 10
-      if (mode === "image") setMode(null);
+      const newOverlays = { ...overlays, [pageNum]: [...(overlays[pageNum] || []), newOverlay] };
+      setOverlays(newOverlays);
+      pushHistory(newOverlays);
+      setPendingImage(null);
+      setMode("select");
+      setSelectedId(id);
+      showToast("Image placed");
+      return;
+    }
+
+    if (mode === "signature") {
+      setShowSignature(true);
+      return;
+    }
+
+    if (mode === "draw" || mode === "eraser") {
+      setIsDrawing(true);
+      const id = `overlay_${Date.now()}`;
+      setDrawingOverlayId(id);
+      const newOverlay: Overlay = {
+        id, type: mode, page: pageNum,
+        x: 0, y: 0, width: 100, height: 100,
+        points: [coords],
+        strokeColor: mode === "eraser" ? "#FFFFFF" : drawColor,
+        strokeWidth: mode === "eraser" ? 15 : drawWidth,
+      };
+      const newOverlays = { ...overlays, [pageNum]: [...(overlays[pageNum] || []), newOverlay] };
+      setOverlays(newOverlays);
+      e.currentTarget.setPointerCapture(e.pointerId);
+      return;
+    }
+
+    if (mode === "highlight") {
+      setIsDrawing(true);
+      setShapeStart(coords);
+      const id = `overlay_${Date.now()}`;
+      setDrawingOverlayId(id);
+      const newOverlay: Overlay = {
+        id, type: "highlight", page: pageNum,
+        x: coords.x, y: coords.y, width: 0, height: 0,
+        highlightColor, opacity: 0.35,
+      };
+      const newOverlays = { ...overlays, [pageNum]: [...(overlays[pageNum] || []), newOverlay] };
+      setOverlays(newOverlays);
+      e.currentTarget.setPointerCapture(e.pointerId);
+      return;
+    }
+
+    // Shape tools
+    if (["rect", "circle", "line", "arrow"].includes(mode)) {
+      setIsDrawing(true);
+      setShapeStart(coords);
+      const id = `overlay_${Date.now()}`;
+      setDrawingOverlayId(id);
+      const newOverlay: Overlay = {
+        id, type: mode, page: pageNum,
+        x: coords.x, y: coords.y, width: 0, height: 0,
+        strokeColor: shapeStroke, strokeWidth: drawWidth,
+        fillColor: shapeFill,
+        points: mode === "line" || mode === "arrow" ? [coords, coords] : undefined,
+      };
+      const newOverlays = { ...overlays, [pageNum]: [...(overlays[pageNum] || []), newOverlay] };
+      setOverlays(newOverlays);
+      e.currentTarget.setPointerCapture(e.pointerId);
+      return;
     }
   };
 
-  const handlePointerMove = (pageNumber: number, e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDrawing || mode !== "whiteout" || !currentPathId) return;
+  const handleCanvasPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDrawing || !drawingOverlayId) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const coords = getCoordinates(e, rect);
+    const coords = getCoords(e, rect);
+    const pageNum = currentPage;
 
-    setOverlays(prev => {
-      const pageOverlays = prev[pageNumber] || [];
-      const updated = pageOverlays.map(o => {
-        if (o.id === currentPathId && o.points) {
-          return { ...o, points: [...o.points, coords] };
-        }
-        return o;
+    if (mode === "draw" || mode === "eraser") {
+      setOverlays(prev => {
+        const pageOverlays = prev[pageNum] || [];
+        return {
+          ...prev,
+          [pageNum]: pageOverlays.map(o =>
+            o.id === drawingOverlayId && o.points
+              ? { ...o, points: [...o.points, coords] }
+              : o
+          )
+        };
       });
-      return { ...prev, [pageNumber]: updated };
-    });
+      return;
+    }
+
+    if (shapeStart && (mode === "highlight" || mode === "rect" || mode === "circle")) {
+      const x = Math.min(shapeStart.x, coords.x);
+      const y = Math.min(shapeStart.y, coords.y);
+      const w = Math.abs(coords.x - shapeStart.x);
+      const h = Math.abs(coords.y - shapeStart.y);
+      setOverlays(prev => ({
+        ...prev,
+        [pageNum]: (prev[pageNum] || []).map(o =>
+          o.id === drawingOverlayId ? { ...o, x, y, width: w, height: h } : o
+        )
+      }));
+      return;
+    }
+
+    if (shapeStart && (mode === "line" || mode === "arrow")) {
+      setOverlays(prev => ({
+        ...prev,
+        [pageNum]: (prev[pageNum] || []).map(o =>
+          o.id === drawingOverlayId ? { ...o, points: [shapeStart, coords] } : o
+        )
+      }));
+      return;
+    }
   };
 
-  const handlePointerUp = (pageNumber: number, e: React.PointerEvent<HTMLDivElement>) => {
+  const handleCanvasPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (isDrawing) {
       setIsDrawing(false);
-      setCurrentPathId(null);
+      if (drawingOverlayId) {
+        pushHistory(overlays);
+      }
+      setDrawingOverlayId(null);
+      setShapeStart(null);
       e.currentTarget.releasePointerCapture(e.pointerId);
     }
   };
 
-  const updateOverlay = (pageNumber: number, id: string, updates: Partial<Overlay>) => {
+  // ─── Drag & Drop Handlers ───
+  const handleElementPointerDown = (overlayId: string, e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (mode !== "select" && mode !== "text") return;
+
+    setSelectedId(overlayId);
+    const overlay = findOverlay(overlayId);
+    if (!overlay) return;
+
+    const parent = e.currentTarget.parentElement;
+    if (!parent) return;
+    const rect = parent.getBoundingClientRect();
+    const coords = getCoords(e, rect);
+
+    setIsDragging(true);
+    setDragOffset({ x: coords.x - overlay.x, y: coords.y - overlay.y });
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleElementPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging || !selectedId) return;
+    const parent = e.currentTarget.parentElement;
+    if (!parent) return;
+    const rect = parent.getBoundingClientRect();
+    const coords = getCoords(e, rect);
+
+    const overlay = findOverlay(selectedId);
+    if (!overlay) return;
+
+    const newX = Math.max(0, Math.min(100 - overlay.width, coords.x - dragOffset.x));
+    const newY = Math.max(0, Math.min(100 - overlay.height, coords.y - dragOffset.y));
+
     setOverlays(prev => ({
       ...prev,
-      [pageNumber]: prev[pageNumber].map(o => o.id === id ? { ...o, ...updates } : o)
+      [overlay.page]: (prev[overlay.page] || []).map(o =>
+        o.id === selectedId ? { ...o, x: newX, y: newY } : o
+      )
     }));
   };
 
-  const removeOverlay = (pageNumber: number, id: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const handleElementPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDragging) {
+      setIsDragging(false);
+      pushHistory(overlays);
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
+  // ─── Resize Handlers ───
+  const handleResizeStart = (corner: string, overlayId: string, e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const overlay = findOverlay(overlayId);
+    if (!overlay) return;
+    const parent = e.currentTarget.closest('.pdf-page-wrapper') as HTMLElement;
+    if (!parent) return;
+    const rect = parent.getBoundingClientRect();
+    const coords = getCoords(e, rect);
+
+    setIsResizing(true);
+    setResizeCorner(corner);
+    setResizeStart({ x: coords.x, y: coords.y, ox: overlay.x, oy: overlay.y, ow: overlay.width, oh: overlay.height });
+    setSelectedId(overlayId);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleResizeMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isResizing || !selectedId || !resizeStart) return;
+    const parent = e.currentTarget.closest('.pdf-page-wrapper') as HTMLElement;
+    if (!parent) return;
+    const rect = parent.getBoundingClientRect();
+    const coords = getCoords(e, rect);
+
+    const dx = coords.x - resizeStart.x;
+    const dy = coords.y - resizeStart.y;
+    const overlay = findOverlay(selectedId);
+    if (!overlay) return;
+
+    let newX = resizeStart.ox, newY = resizeStart.oy;
+    let newW = resizeStart.ow, newH = resizeStart.oh;
+
+    if (resizeCorner.includes("e")) newW = Math.max(2, resizeStart.ow + dx);
+    if (resizeCorner.includes("s")) newH = Math.max(2, resizeStart.oh + dy);
+    if (resizeCorner.includes("w")) { newX = resizeStart.ox + dx; newW = Math.max(2, resizeStart.ow - dx); }
+    if (resizeCorner.includes("n")) { newY = resizeStart.oy + dy; newH = Math.max(2, resizeStart.oh - dy); }
+
     setOverlays(prev => ({
       ...prev,
-      [pageNumber]: prev[pageNumber].filter(o => o.id !== id)
+      [overlay.page]: (prev[overlay.page] || []).map(o =>
+        o.id === selectedId ? { ...o, x: newX, y: newY, width: newW, height: newH } : o
+      )
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setPendingImage({ file, dataUrl: event.target?.result as string });
-      setMode("image");
+  const handleResizeEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (isResizing) {
+      setIsResizing(false);
+      setResizeStart(null);
+      pushHistory(overlays);
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
+  // ─── Helpers ───
+  const findOverlay = (id: string): Overlay | null => {
+    for (const pageOverlays of Object.values(overlays)) {
+      const found = pageOverlays.find(o => o.id === id);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  const updateOverlay = (id: string, updates: Partial<Overlay>) => {
+    const overlay = findOverlay(id);
+    if (!overlay) return;
+    const newOverlays = {
+      ...overlays,
+      [overlay.page]: (overlays[overlay.page] || []).map(o =>
+        o.id === id ? { ...o, ...updates } : o
+      )
     };
-    reader.readAsDataURL(file);
+    setOverlays(newOverlays);
+    pushHistory(newOverlays);
   };
 
+  // ─── Image Upload Handler ───
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setPendingImage({ file: f, dataUrl: ev.target?.result as string });
+      setMode("image");
+      showToast("Click on PDF to place image");
+    };
+    reader.readAsDataURL(f);
+  };
+
+  // ─── Signature Handlers ───
+  const sigStartDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    setSigDrawing(true);
+    const ctx = canvas.getContext("2d")!;
+    const rect = canvas.getBoundingClientRect();
+    ctx.beginPath();
+    ctx.moveTo(
+      (e.clientX - rect.left) * (canvas.width / rect.width),
+      (e.clientY - rect.top) * (canvas.height / rect.height)
+    );
+    canvas.setPointerCapture(e.pointerId);
+  };
+
+  const sigDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!sigDrawing) return;
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
+    const rect = canvas.getBoundingClientRect();
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#000";
+    ctx.lineTo(
+      (e.clientX - rect.left) * (canvas.width / rect.width),
+      (e.clientY - rect.top) * (canvas.height / rect.height)
+    );
+    ctx.stroke();
+  };
+
+  const sigEndDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    setSigDrawing(false);
+    const canvas = sigCanvasRef.current;
+    if (canvas) canvas.releasePointerCapture(e.pointerId);
+  };
+
+  const clearSigCanvas = () => {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const placeSignature = () => {
+    let dataUrl = "";
+    if (sigMode === "draw") {
+      const canvas = sigCanvasRef.current;
+      if (!canvas) return;
+      dataUrl = canvas.toDataURL("image/png");
+    } else {
+      // Type mode: render text to canvas
+      const tmpCanvas = document.createElement("canvas");
+      tmpCanvas.width = 400;
+      tmpCanvas.height = 120;
+      const ctx = tmpCanvas.getContext("2d")!;
+      ctx.font = "italic 40px 'Georgia', serif";
+      ctx.fillStyle = "#000";
+      ctx.fillText(sigText || "Signature", 20, 75);
+      dataUrl = tmpCanvas.toDataURL("image/png");
+    }
+
+    const id = `overlay_${Date.now()}`;
+    const newOverlay: Overlay = {
+      id, type: "signature", page: currentPage,
+      x: 30, y: 70, width: 25, height: 10,
+      signatureDataUrl: dataUrl, dataUrl,
+    };
+    const newOverlays = { ...overlays, [currentPage]: [...(overlays[currentPage] || []), newOverlay] };
+    setOverlays(newOverlays);
+    pushHistory(newOverlays);
+    setShowSignature(false);
+    setMode("select");
+    setSelectedId(id);
+    showToast("Signature placed — drag to reposition");
+  };
+
+  // ─── Export Handler ───
   const handleExport = async () => {
     if (!file) return;
     setIsProcessing(true);
@@ -176,54 +614,147 @@ export default function PdfEditor() {
       const pdfDoc = await PDFDocument.load(arrayBuffer);
       const pages = pdfDoc.getPages();
 
+      // Embed fonts
+      const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const helveticaOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+      const helveticaBoldOblique = await pdfDoc.embedFont(StandardFonts.HelveticaBoldOblique);
+
       for (const [pageStr, pageOverlays] of Object.entries(overlays)) {
-        const pageIndex = parseInt(pageStr) - 1; 
+        const pageIndex = parseInt(pageStr) - 1;
+        if (pageIndex < 0 || pageIndex >= pages.length) continue;
         const page = pages[pageIndex];
         const { width, height } = page.getSize();
 
         for (const overlay of pageOverlays) {
+          const absX = (overlay.x / 100) * width;
+          const absY = height - ((overlay.y / 100) * height);
+
           if (overlay.type === "text" && overlay.value) {
-            const absoluteX = (overlay.x / 100) * width;
-            const absoluteY = height - ((overlay.y / 100) * height);
+            let font = helvetica;
+            if (overlay.bold && overlay.italic) font = helveticaBoldOblique;
+            else if (overlay.bold) font = helveticaBold;
+            else if (overlay.italic) font = helveticaOblique;
+
+            const color = hexToRgb(overlay.fontColor || "#000000");
             page.drawText(overlay.value, {
-              x: absoluteX,
-              y: absoluteY - 16, 
-              size: 16,
-              color: rgb(0, 0, 0),
+              x: absX,
+              y: absY - (overlay.fontSize || 16),
+              size: overlay.fontSize || 16,
+              font,
+              color: rgb(color.r, color.g, color.b),
             });
-          } else if (overlay.type === "whiteout" && overlay.points && overlay.points.length > 0) {
-            // Convert percentage points to absolute coords
-            let pathSvg = "";
+          }
+
+          if ((overlay.type === "draw" || overlay.type === "eraser") && overlay.points && overlay.points.length > 1) {
+            const color = hexToRgb(overlay.strokeColor || "#000000");
+            let pathD = "";
             overlay.points.forEach((pt, i) => {
-              const absX = (pt.x / 100) * width;
-              const absY = height - ((pt.y / 100) * height);
-              if (i === 0) pathSvg += `M ${absX} ${absY} `;
-              else pathSvg += `L ${absX} ${absY} `;
+              const px = (pt.x / 100) * width;
+              const py = height - ((pt.y / 100) * height);
+              if (i === 0) pathD += `M ${px} ${py} `;
+              else pathD += `L ${px} ${py} `;
             });
-            
-            page.drawSvgPath(pathSvg, {
-              color: undefined, 
-              borderColor: rgb(1, 1, 1),
-              borderWidth: 15,
+            page.drawSvgPath(pathD, {
+              borderColor: rgb(color.r, color.g, color.b),
+              borderWidth: overlay.strokeWidth || 3,
+              color: undefined,
             });
-          } else if (overlay.type === "image" && overlay.file) {
-            const absoluteX = (overlay.x / 100) * width;
-            const absoluteY = height - ((overlay.y / 100) * height);
-            const imageBytes = await overlay.file.arrayBuffer();
-            let pdfImage;
-            if (overlay.file.type === "image/png") {
-              pdfImage = await pdfDoc.embedPng(imageBytes);
-            } else {
-              pdfImage = await pdfDoc.embedJpg(imageBytes);
-            }
+          }
+
+          if (overlay.type === "rect") {
+            const color = hexToRgb(overlay.strokeColor || "#000000");
             const w = (overlay.width / 100) * width;
             const h = (overlay.height / 100) * height;
-            page.drawImage(pdfImage, {
-              x: absoluteX,
-              y: absoluteY - h,
+            const fillC = overlay.fillColor && overlay.fillColor !== "transparent"
+              ? hexToRgb(overlay.fillColor) : undefined;
+            page.drawRectangle({
+              x: absX,
+              y: absY - h,
               width: w,
               height: h,
+              borderColor: rgb(color.r, color.g, color.b),
+              borderWidth: overlay.strokeWidth || 2,
+              color: fillC ? rgb(fillC.r, fillC.g, fillC.b) : undefined,
+              opacity: fillC ? 0.3 : undefined,
             });
+          }
+
+          if (overlay.type === "circle") {
+            const color = hexToRgb(overlay.strokeColor || "#000000");
+            const w = (overlay.width / 100) * width;
+            const h = (overlay.height / 100) * height;
+            page.drawEllipse({
+              x: absX + w / 2,
+              y: absY - h / 2,
+              xScale: w / 2,
+              yScale: h / 2,
+              borderColor: rgb(color.r, color.g, color.b),
+              borderWidth: overlay.strokeWidth || 2,
+              color: undefined,
+            });
+          }
+
+          if ((overlay.type === "line" || overlay.type === "arrow") && overlay.points && overlay.points.length === 2) {
+            const color = hexToRgb(overlay.strokeColor || "#000000");
+            const p1x = (overlay.points[0].x / 100) * width;
+            const p1y = height - ((overlay.points[0].y / 100) * height);
+            const p2x = (overlay.points[1].x / 100) * width;
+            const p2y = height - ((overlay.points[1].y / 100) * height);
+            page.drawLine({
+              start: { x: p1x, y: p1y },
+              end: { x: p2x, y: p2y },
+              color: rgb(color.r, color.g, color.b),
+              thickness: overlay.strokeWidth || 2,
+            });
+
+            if (overlay.type === "arrow") {
+              const angle = Math.atan2(p2y - p1y, p2x - p1x);
+              const headLen = 12;
+              const a1x = p2x - headLen * Math.cos(angle - Math.PI / 6);
+              const a1y = p2y - headLen * Math.sin(angle - Math.PI / 6);
+              const a2x = p2x - headLen * Math.cos(angle + Math.PI / 6);
+              const a2y = p2y - headLen * Math.sin(angle + Math.PI / 6);
+              page.drawLine({ start: { x: p2x, y: p2y }, end: { x: a1x, y: a1y }, color: rgb(color.r, color.g, color.b), thickness: overlay.strokeWidth || 2 });
+              page.drawLine({ start: { x: p2x, y: p2y }, end: { x: a2x, y: a2y }, color: rgb(color.r, color.g, color.b), thickness: overlay.strokeWidth || 2 });
+            }
+          }
+
+          if (overlay.type === "highlight") {
+            const color = hexToRgb(overlay.highlightColor || "#FBBF24");
+            const w = (overlay.width / 100) * width;
+            const h = (overlay.height / 100) * height;
+            page.drawRectangle({
+              x: absX,
+              y: absY - h,
+              width: w,
+              height: h,
+              color: rgb(color.r, color.g, color.b),
+              opacity: overlay.opacity || 0.35,
+            });
+          }
+
+          if ((overlay.type === "image" || overlay.type === "signature") && overlay.dataUrl) {
+            try {
+              const resp = await fetch(overlay.dataUrl);
+              const imgBytes = await resp.arrayBuffer();
+              let pdfImage;
+              if (overlay.dataUrl.startsWith("data:image/png")) {
+                pdfImage = await pdfDoc.embedPng(imgBytes);
+              } else {
+                pdfImage = await pdfDoc.embedJpg(imgBytes);
+              }
+              const w = (overlay.width / 100) * width;
+              const h = (overlay.height / 100) * height;
+              page.drawImage(pdfImage, {
+                x: absX,
+                y: absY - h,
+                width: w,
+                height: h,
+              });
+            } catch {
+              console.warn("Failed to embed image overlay", overlay.id);
+            }
           }
         }
       }
@@ -231,203 +762,609 @@ export default function PdfEditor() {
       const modifiedPdfBytes = await pdfDoc.save();
       const blob = new Blob([modifiedPdfBytes as any], { type: "application/pdf" });
       setResultUrl(URL.createObjectURL(blob));
+      showToast("PDF exported successfully!");
     } catch (err) {
       console.error(err);
-      setError("Failed to edit PDF. Ensure the file is not encrypted.");
+      setError("Failed to export PDF. Ensure the file is not encrypted.");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      {!file ? (
-        <div
-          {...getRootProps()}
-          style={{
-            border: `2px dashed ${isDragActive ? "var(--accent)" : "var(--border)"}`,
-            borderRadius: 16, padding: "64px 24px", textAlign: "center",
-            background: isDragActive ? "var(--bg2)" : "var(--surface)",
-            cursor: "pointer", transition: "all 0.2s"
-          }}
-        >
-          <input {...getInputProps()} />
-          <UploadCloud size={48} style={{ color: "var(--accent)", margin: "0 auto 16px" }} />
-          <p style={{ fontWeight: 600, fontSize: 16, marginBottom: 8 }}>Upload PDF to Edit Visually</p>
-          <p style={{ color: "var(--muted)", fontSize: 13 }}>Click anywhere on your PDF to sketch whiteout, write text, or place images natively.</p>
-        </div>
-      ) : (
-        <div style={{ display: "flex", gap: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
-          
-          {/* Sidebar Tools */}
-          <div style={{ flex: "1 1 250px", display: "flex", flexDirection: "column", gap: 16, position: "sticky", top: 24 }}>
-            <div style={{ border: "1px solid var(--border)", padding: 24, borderRadius: 12, background: "var(--surface)", boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-              <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                <Settings2 size={18} /> Tools
-              </h3>
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <button
-                  onClick={() => setMode("text")}
-                  style={{ padding: 12, borderRadius: 8, border: `1px solid ${mode === "text" ? "var(--accent)" : "var(--border)"}`, background: mode === "text" ? "var(--accent-hover-bg)" : "var(--bg2)", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, fontWeight: 500, color: mode === "text" ? "var(--accent)" : "var(--text)", textAlign: "left", transition: "all 0.1s" }}
-                >
-                  <Type size={18} /> Add Text Tool
-                </button>
-                
-                <button
-                  onClick={() => setMode("whiteout")}
-                  style={{ padding: 12, borderRadius: 8, border: `1px solid ${mode === "whiteout" ? "var(--accent)" : "var(--border)"}`, background: mode === "whiteout" ? "var(--accent-hover-bg)" : "var(--bg2)", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, fontWeight: 500, color: mode === "whiteout" ? "var(--accent)" : "var(--text)", textAlign: "left", transition: "all 0.1s" }}
-                >
-                  <Eraser size={18} /> Eraser (Sketch)
-                </button>
+  // ─── Rendering Helpers ───
+  const hexToRgb = (hex: string) => {
+    const c = hex.replace("#", "");
+    return {
+      r: parseInt(c.substring(0, 2), 16) / 255,
+      g: parseInt(c.substring(2, 4), 16) / 255,
+      b: parseInt(c.substring(4, 6), 16) / 255,
+    };
+  };
 
-                <div style={{ padding: 12, borderRadius: 8, border: `1px solid ${mode === "image" ? "var(--accent)" : "var(--border)"}`, background: mode === "image" ? "var(--accent-hover-bg)" : "var(--bg2)", transition: "all 0.1s" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 12, fontWeight: 500, color: mode === "image" ? "var(--accent)" : "var(--text)", cursor: "pointer" }}>
-                    <ImageIcon size={18} /> Upload Image
-                    <input type="file" accept="image/png, image/jpeg" style={{ display: "none" }} onChange={handleImageUpload} />
-                  </label>
-                  {pendingImage && (
-                    <div style={{ marginTop: 12, fontSize: 12, color: "var(--muted)" }}>Ready: {pendingImage.file.name}</div>
-                  )}
-                </div>
-              </div>
+  const pageWidth = Math.round(600 * zoom);
 
-              {mode === "whiteout" && (
-                <p style={{ marginTop: 16, fontSize: 13, color: "var(--muted)" }}>Click and drag to physically sketch whiteout strokes over the text.</p>
-              )}
-              {mode === "text" && (
-                <p style={{ marginTop: 16, fontSize: 13, color: "var(--muted)" }}>Click anywhere to spawn a native cursor, just like a notes app.</p>
-              )}
+  const getCursor = () => {
+    if (mode === "draw" || mode === "eraser") return "crosshair";
+    if (mode === "text") return "text";
+    if (["rect", "circle", "line", "arrow", "highlight"].includes(mode)) return "crosshair";
+    if (mode === "image") return "copy";
+    return "default";
+  };
 
-              {error && <p style={{ color: "red", fontSize: 14, marginTop: 16 }}>{error}</p>}
+  const currentPageOverlays = overlays[currentPage] || [];
 
-              {!resultUrl ? (
-                <button
-                  onClick={handleExport}
-                  disabled={isProcessing}
-                  className="btn-primary"
-                  style={{ width: "100%", marginTop: 24, padding: 16, display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}
-                >
-                  {isProcessing ? <><Loader2 className="animate-spin" size={18} /> Processing...</> : <><Download size={18} /> Export PDF</>}
-                </button>
-              ) : (
-                <div style={{ marginTop: 24 }}>
-                  <a href={resultUrl} download={file.name.replace(/\.pdf$/i, "") + "-edited.pdf"} className="btn-primary" style={{ display: "flex", justifyContent: "center", textDecoration: "none", gap: 8, padding: 16 }}>
-                    <Download size={18} /> Download Result
-                  </a>
-                </div>
-              )}
-            </div>
-            
-            <button onClick={() => { setFile(null); setResultUrl(null); setOverlays({}); }} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 14, textDecoration: "underline" }}>
-              Start Over with New PDF
-            </button>
+  // ─── Render ───
+  if (!file) {
+    return (
+      <div
+        {...getRootProps()}
+        className={`pdf-drop-zone ${isDragActive ? "dragging" : ""}`}
+      >
+        <input {...getInputProps()} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <UploadCloud size={56} style={{ color: "var(--accent)", marginBottom: 8 }} />
+          <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 20, marginBottom: 6 }}>
+            Upload PDF to Edit
+          </p>
+          <p style={{ color: "var(--muted)", fontSize: 14, maxWidth: 400, lineHeight: 1.5 }}>
+            Drag & drop your PDF here, or click to browse.
+            Add text, draw, shapes, highlights, images, and signatures — all in your browser.
+          </p>
+          <div style={{
+            display: "flex", gap: 8, justifyContent: "center", marginTop: 20, flexWrap: "wrap"
+          }}>
+            {["✏️ Text", "🖊️ Draw", "🔷 Shapes", "🖍️ Highlight", "🖼️ Images", "✍️ Sign"].map(tag => (
+              <span key={tag} className="tag" style={{ fontSize: 12, padding: "4px 10px" }}>{tag}</span>
+            ))}
           </div>
+        </div>
+      </div>
+    );
+  }
 
-          {/* Visual PDF Canvas */}
-          <div style={{ flex: "2 1 500px", border: "1px solid var(--border)", borderRadius: 12, background: "var(--bg2)", padding: 24, display: "flex", flexDirection: "column", alignItems: "center", height: "80vh", overflowY: "auto", position: "relative", cursor: mode === "whiteout" ? "cell" : mode ? "crosshair" : "default" }}>
-            <Document
-              file={file}
-              onLoadSuccess={onDocumentLoadSuccess}
-              loading={<div style={{ padding: 40, textAlign: "center" }}><Loader2 className="animate-spin" style={{ margin: "0 auto" }} /> Loading PDF Visuals...</div>}
-            >
-              {Array.from(new Array(numPages), (el, index) => {
-                const pageNum = index + 1;
-                return (
-                  <div key={`page_${pageNum}`} style={{ position: "relative", marginBottom: 32, boxShadow: "0 8px 32px rgba(0,0,0,0.12)", background: "white" }}>
-                    <Page 
-                      pageNumber={pageNum} 
-                      renderTextLayer={false} 
-                      renderAnnotationLayer={false}
-                      width={600}
-                    />
-                    
-                    {/* Interaction Layer for Drawing & Clicking */}
-                    <div 
-                      ref={(el) => { containerRefs.current[pageNum] = el; }}
-                      onPointerDown={(e) => handlePointerDown(pageNum, e)}
-                      onPointerMove={(e) => handlePointerMove(pageNum, e)}
-                      onPointerUp={(e) => handlePointerUp(pageNum, e)}
-                      style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, touchAction: "none" }}
-                    >
-                      {/* Render Whiteout SVG Layer */}
-                      <svg width="100%" height="100%" style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}>
-                        {(overlays[pageNum] || []).filter(o => o.type === "whiteout" && o.points).map(overlay => {
-                          const pointsStr = overlay.points!.map(pt => `${pt.x}%,${pt.y}%`).join(' ');
-                          return (
-                            <polyline 
-                              key={overlay.id} 
-                              points={pointsStr} 
-                              stroke="white" 
-                              strokeWidth="15" 
-                              fill="none" 
-                              strokeLinecap="round" 
-                              strokeLinejoin="round" 
-                            />
-                          );
-                        })}
-                      </svg>
+  return (
+    <div className="pdf-editor-layout">
+      {/* ═══ Main Toolbar ═══ */}
+      <div className="pdf-toolbar">
+        {/* Tool group: Selection */}
+        <div className="pdf-toolbar-group">
+          <ToolBtn icon={<ChevronLeft size={14} />} label="" active={false}
+            onClick={() => { setFile(null); setResultUrl(null); setOverlays({}); setSelectedId(null); }}
+            title="Back / New File"
+          />
+        </div>
+        <div className="pdf-toolbar-divider" />
 
-                      {/* Render Text & Image Overlays */}
-                      {(overlays[pageNum] || []).filter(o => o.type !== "whiteout").map(overlay => (
-                        <div 
-                          key={overlay.id} 
-                          className="overlay-element"
-                          style={{ 
-                            position: "absolute", 
-                            left: `${overlay.x}%`, 
-                            top: `${overlay.y}%`, 
-                            width: overlay.type === "image" ? `${overlay.width}%` : "max-content", 
-                            height: overlay.type === "image" ? `${overlay.height}%` : "auto",
-                          }}
-                          onPointerDown={(e) => e.stopPropagation()} // Prevent spawning new element when clicking existing
-                        >
-                          <style>{`
-                            .overlay-element .delete-btn { opacity: 0; transition: opacity 0.2s; }
-                            .overlay-element:hover .delete-btn { opacity: 1; }
-                          `}</style>
-                          
-                          <button 
-                            className="delete-btn"
-                            onClick={(e) => removeOverlay(pageNum, overlay.id, e)} 
-                            style={{ position: "absolute", top: -10, right: overlay.type === "image" ? -10 : -20, background: "rgba(255,50,50,0.9)", color: "white", border: "none", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10 }}
-                          >
-                            <X size={12} />
-                          </button>
-                          
-                          {overlay.type === "text" && (
-                            <input 
-                              type="text" 
-                              value={overlay.value || ""} 
-                              onChange={(e) => updateOverlay(pageNum, overlay.id, { value: e.target.value })}
-                              placeholder=""
-                              style={{ 
-                                width: Math.max(50, (overlay.value?.length || 0) * 10 + 20) + "px", 
-                                background: "transparent", 
-                                border: "none", 
-                                outline: "none", 
-                                fontSize: 16, 
-                                fontFamily: "sans-serif",
-                                color: "black",
-                                padding: "0 2px"
-                              }}
-                              autoFocus
-                            />
-                          )}
-                          
-                          {overlay.type === "image" && (
-                            <img src={overlay.dataUrl} style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }} alt="Stamp" />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </Document>
+        {/* Tool group: Editing tools */}
+        <div className="pdf-toolbar-group">
+          <ToolBtn icon={<Type size={16} />} label="Text" active={mode === "text"}
+            onClick={() => setMode(mode === "text" ? "select" : "text")} title="Add Text (click to place)" />
+          <ToolBtn icon={<Pen size={16} />} label="Draw" active={mode === "draw"}
+            onClick={() => setMode(mode === "draw" ? "select" : "draw")} title="Freehand Drawing" />
+          <ToolBtn icon={<Eraser size={16} />} label="Eraser" active={mode === "eraser"}
+            onClick={() => setMode(mode === "eraser" ? "select" : "eraser")} title="White-out Eraser" />
+        </div>
+        <div className="pdf-toolbar-divider" />
+
+        {/* Tool group: Shapes */}
+        <div className="pdf-toolbar-group">
+          <ToolBtn icon={<Square size={16} />} label="Rect" active={mode === "rect"}
+            onClick={() => setMode(mode === "rect" ? "select" : "rect")} title="Draw Rectangle" />
+          <ToolBtn icon={<Circle size={16} />} label="Circle" active={mode === "circle"}
+            onClick={() => setMode(mode === "circle" ? "select" : "circle")} title="Draw Ellipse" />
+          <ToolBtn icon={<Minus size={16} />} label="Line" active={mode === "line"}
+            onClick={() => setMode(mode === "line" ? "select" : "line")} title="Draw Line" />
+          <ToolBtn icon={<ArrowRight size={16} />} label="Arrow" active={mode === "arrow"}
+            onClick={() => setMode(mode === "arrow" ? "select" : "arrow")} title="Draw Arrow" />
+        </div>
+        <div className="pdf-toolbar-divider" />
+
+        {/* Tool group: Annotation */}
+        <div className="pdf-toolbar-group">
+          <ToolBtn icon={<Highlighter size={16} />} label="Highlight" active={mode === "highlight"}
+            onClick={() => setMode(mode === "highlight" ? "select" : "highlight")} title="Highlight Area" />
+          <label style={{ margin: 0 }}>
+            <ToolBtn icon={<ImageIcon size={16} />} label="Image" active={mode === "image"}
+              onClick={() => {}} title="Upload & Place Image" />
+            <input type="file" accept="image/png,image/jpeg" style={{ display: "none" }}
+              onChange={handleImageUpload} />
+          </label>
+          <ToolBtn icon={<PenTool size={16} />} label="Sign" active={mode === "signature"}
+            onClick={() => { setMode("signature"); setShowSignature(true); }} title="Add Signature" />
+        </div>
+        <div className="pdf-toolbar-divider" />
+
+        {/* Undo/Redo */}
+        <div className="pdf-toolbar-group">
+          <ToolBtn icon={<Undo2 size={16} />} label="" active={false} onClick={undo}
+            disabled={historyIndex <= 0} title="Undo (Ctrl+Z)" />
+          <ToolBtn icon={<Redo2 size={16} />} label="" active={false} onClick={redo}
+            disabled={historyIndex >= history.length - 1} title="Redo (Ctrl+Shift+Z)" />
+        </div>
+
+        <div style={{ flex: 1 }} />
+
+        {/* Delete selected */}
+        {selectedId && (
+          <ToolBtn icon={<Trash2 size={16} />} label="Delete" active={false}
+            onClick={deleteSelected} title="Delete Selected (Del)" />
+        )}
+
+        {/* Export */}
+        {!resultUrl ? (
+          <button className="btn-primary" onClick={handleExport} disabled={isProcessing}
+            style={{ padding: "7px 20px", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+            {isProcessing ? <><Loader2 className="animate-spin" size={15} /> Exporting...</>
+              : <><Download size={15} /> Export PDF</>}
+          </button>
+        ) : (
+          <a href={resultUrl} download={file.name.replace(/\.pdf$/i, "") + "-edited.pdf"}
+            className="btn-primary"
+            style={{ padding: "7px 20px", fontSize: 13, display: "flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
+            <Download size={15} /> Download
+          </a>
+        )}
+      </div>
+
+      {/* ═══ Sub-Toolbar (contextual options) ═══ */}
+      {(mode === "text" || (selectedId && findOverlay(selectedId)?.type === "text")) && (
+        <div className="pdf-sub-toolbar">
+          <label>
+            Size
+            <select value={fontSize} onChange={e => {
+              const v = Number(e.target.value);
+              setFontSize(v);
+              if (selectedId) updateOverlay(selectedId, { fontSize: v });
+            }}>
+              {FONT_SIZES.map(s => <option key={s} value={s}>{s}px</option>)}
+            </select>
+          </label>
+          <label>
+            Color
+            <input type="color" value={fontColor} onChange={e => {
+              setFontColor(e.target.value);
+              if (selectedId) updateOverlay(selectedId, { fontColor: e.target.value });
+            }} />
+          </label>
+          <button className={`pdf-tool-btn ${fontBold ? "active" : ""}`}
+            onClick={() => { setFontBold(!fontBold); if (selectedId) updateOverlay(selectedId, { bold: !fontBold }); }}
+            title="Bold">
+            <Bold size={15} />
+          </button>
+          <button className={`pdf-tool-btn ${fontItalic ? "active" : ""}`}
+            onClick={() => { setFontItalic(!fontItalic); if (selectedId) updateOverlay(selectedId, { italic: !fontItalic }); }}
+            title="Italic">
+            <Italic size={15} />
+          </button>
+        </div>
+      )}
+
+      {(mode === "draw" || mode === "eraser") && (
+        <div className="pdf-sub-toolbar">
+          {mode === "draw" && (
+            <>
+              <label>Color</label>
+              <div style={{ display: "flex", gap: 4 }}>
+                {DRAW_COLORS.map(c => (
+                  <div key={c} className={`pdf-color-swatch ${drawColor === c ? "active" : ""}`}
+                    style={{ background: c }} onClick={() => setDrawColor(c)} />
+                ))}
+              </div>
+            </>
+          )}
+          <label>
+            Width
+            <select value={drawWidth} onChange={e => setDrawWidth(Number(e.target.value))}>
+              {STROKE_WIDTHS.map(w => <option key={w} value={w}>{w}px</option>)}
+            </select>
+          </label>
+        </div>
+      )}
+
+      {["rect", "circle", "line", "arrow"].includes(mode) && (
+        <div className="pdf-sub-toolbar">
+          <label>
+            Stroke
+            <input type="color" value={shapeStroke} onChange={e => setShapeStroke(e.target.value)} />
+          </label>
+          {(mode === "rect" || mode === "circle") && (
+            <label>
+              Fill
+              <select value={shapeFill} onChange={e => setShapeFill(e.target.value)}>
+                <option value="transparent">None</option>
+                <option value="#EF4444">Red</option>
+                <option value="#3B82F6">Blue</option>
+                <option value="#10B981">Green</option>
+                <option value="#F59E0B">Yellow</option>
+                <option value="#8B5CF6">Purple</option>
+              </select>
+            </label>
+          )}
+          <label>
+            Width
+            <select value={drawWidth} onChange={e => setDrawWidth(Number(e.target.value))}>
+              {STROKE_WIDTHS.map(w => <option key={w} value={w}>{w}px</option>)}
+            </select>
+          </label>
+        </div>
+      )}
+
+      {mode === "highlight" && (
+        <div className="pdf-sub-toolbar">
+          <label>Color</label>
+          <div style={{ display: "flex", gap: 4 }}>
+            {HIGHLIGHT_COLORS.map(c => (
+              <div key={c} className={`pdf-color-swatch ${highlightColor === c ? "active" : ""}`}
+                style={{ background: c }} onClick={() => setHighlightColor(c)} />
+            ))}
           </div>
         </div>
       )}
+
+      {mode === "image" && pendingImage && (
+        <div className="pdf-sub-toolbar">
+          <span style={{ fontSize: 12, color: "var(--muted)" }}>📎 {pendingImage.file.name} — click on PDF to place</span>
+          <button className="pdf-tool-btn" onClick={() => { setPendingImage(null); setMode("select"); }}>
+            <X size={14} /> Cancel
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div style={{ padding: "8px 16px", background: "#FEE2E2", color: "#991B1B", fontSize: 13, borderBottom: "1px solid #FECACA" }}>
+          {error}
+        </div>
+      )}
+
+      {/* ═══ PDF Canvas Area ═══ */}
+      <div className="pdf-canvas-area" onClick={() => { if (mode === "select") setSelectedId(null); }}>
+        <Document
+          file={file}
+          onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+          loading={
+            <div style={{ padding: 60, textAlign: "center" }}>
+              <Loader2 className="animate-spin" size={32} style={{ margin: "0 auto 16px", color: "var(--accent)" }} />
+              <p style={{ color: "var(--muted)", fontSize: 14 }}>Loading PDF...</p>
+            </div>
+          }
+        >
+          <div
+            className="pdf-page-wrapper"
+            ref={pageContainerRef}
+            onPointerDown={handleCanvasPointerDown}
+            onPointerMove={handleCanvasPointerMove}
+            onPointerUp={handleCanvasPointerUp}
+            style={{ cursor: getCursor(), touchAction: "none" }}
+          >
+            <Page
+              pageNumber={currentPage}
+              renderTextLayer={false}
+              renderAnnotationLayer={false}
+              width={pageWidth}
+            />
+
+            {/* SVG layer for draw/eraser strokes */}
+            <svg width="100%" height="100%" style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}>
+              {currentPageOverlays.filter(o => (o.type === "draw" || o.type === "eraser") && o.points && o.points.length > 1).map(o => (
+                <polyline
+                  key={o.id}
+                  points={o.points!.map(pt => `${pt.x}%,${pt.y}%`).join(' ')}
+                  stroke={o.strokeColor || "#000"}
+                  strokeWidth={o.strokeWidth || 3}
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={o.id === selectedId ? { filter: "drop-shadow(0 0 3px rgba(59,130,246,0.5))" } : {}}
+                />
+              ))}
+
+              {/* Line / Arrow overlays */}
+              {currentPageOverlays.filter(o => (o.type === "line" || o.type === "arrow") && o.points && o.points.length === 2).map(o => {
+                const p1 = o.points![0];
+                const p2 = o.points![1];
+                return (
+                  <g key={o.id}>
+                    <line
+                      x1={`${p1.x}%`} y1={`${p1.y}%`}
+                      x2={`${p2.x}%`} y2={`${p2.y}%`}
+                      stroke={o.strokeColor || "#000"}
+                      strokeWidth={o.strokeWidth || 2}
+                      strokeLinecap="round"
+                    />
+                    {o.type === "arrow" && (() => {
+                      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+                      const headLen = 2;
+                      return (
+                        <>
+                          <line
+                            x1={`${p2.x}%`} y1={`${p2.y}%`}
+                            x2={`${p2.x - headLen * Math.cos(angle - Math.PI / 6)}%`}
+                            y2={`${p2.y - headLen * Math.sin(angle - Math.PI / 6)}%`}
+                            stroke={o.strokeColor || "#000"}
+                            strokeWidth={o.strokeWidth || 2}
+                            strokeLinecap="round"
+                          />
+                          <line
+                            x1={`${p2.x}%`} y1={`${p2.y}%`}
+                            x2={`${p2.x - headLen * Math.cos(angle + Math.PI / 6)}%`}
+                            y2={`${p2.y - headLen * Math.sin(angle + Math.PI / 6)}%`}
+                            stroke={o.strokeColor || "#000"}
+                            strokeWidth={o.strokeWidth || 2}
+                            strokeLinecap="round"
+                          />
+                        </>
+                      );
+                    })()}
+                  </g>
+                );
+              })}
+            </svg>
+
+            {/* Shape overlays (rect, circle) */}
+            {currentPageOverlays.filter(o => o.type === "rect" || o.type === "circle").map(o => (
+              <div
+                key={o.id}
+                className={`pdf-overlay-element ${selectedId === o.id ? "selected" : ""}`}
+                style={{
+                  left: `${o.x}%`, top: `${o.y}%`,
+                  width: `${o.width}%`, height: `${o.height}%`,
+                  border: `${o.strokeWidth || 2}px solid ${o.strokeColor || "#000"}`,
+                  borderRadius: o.type === "circle" ? "50%" : "0",
+                  background: o.fillColor && o.fillColor !== "transparent" ? `${o.fillColor}4D` : "transparent",
+                  pointerEvents: mode === "select" ? "auto" : "none",
+                }}
+                onPointerDown={e => handleElementPointerDown(o.id, e)}
+                onPointerMove={handleElementPointerMove}
+                onPointerUp={handleElementPointerUp}
+              >
+                <button className="pdf-overlay-delete" onClick={e => { e.stopPropagation(); const id = o.id; setOverlays(prev => { const n = { ...prev, [currentPage]: (prev[currentPage] || []).filter(x => x.id !== id) }; pushHistory(n); return n; }); setSelectedId(null); }}>
+                  <X size={10} />
+                </button>
+                {selectedId === o.id && (
+                  <>
+                    {["nw","ne","sw","se"].map(corner => (
+                      <div key={corner} className={`pdf-resize-handle ${corner}`}
+                        onPointerDown={e => handleResizeStart(corner, o.id, e)}
+                        onPointerMove={handleResizeMove}
+                        onPointerUp={handleResizeEnd}
+                      />
+                    ))}
+                  </>
+                )}
+              </div>
+            ))}
+
+            {/* Highlight overlays */}
+            {currentPageOverlays.filter(o => o.type === "highlight").map(o => (
+              <div
+                key={o.id}
+                className={`pdf-overlay-element ${selectedId === o.id ? "selected" : ""}`}
+                style={{
+                  left: `${o.x}%`, top: `${o.y}%`,
+                  width: `${o.width}%`, height: `${o.height}%`,
+                  background: o.highlightColor || "#FBBF24",
+                  opacity: o.opacity || 0.35,
+                  borderRadius: 2,
+                  pointerEvents: mode === "select" ? "auto" : "none",
+                }}
+                onPointerDown={e => handleElementPointerDown(o.id, e)}
+                onPointerMove={handleElementPointerMove}
+                onPointerUp={handleElementPointerUp}
+              >
+                <button className="pdf-overlay-delete" onClick={e => { e.stopPropagation(); setOverlays(prev => { const n = { ...prev, [currentPage]: (prev[currentPage] || []).filter(x => x.id !== o.id) }; pushHistory(n); return n; }); setSelectedId(null); }}>
+                  <X size={10} />
+                </button>
+              </div>
+            ))}
+
+            {/* Text overlays */}
+            {currentPageOverlays.filter(o => o.type === "text").map(o => (
+              <div
+                key={o.id}
+                className={`pdf-overlay-element ${selectedId === o.id ? "selected" : ""}`}
+                style={{
+                  left: `${o.x}%`, top: `${o.y}%`,
+                  pointerEvents: mode === "select" || mode === "text" ? "auto" : "none",
+                }}
+                onPointerDown={e => handleElementPointerDown(o.id, e)}
+                onPointerMove={handleElementPointerMove}
+                onPointerUp={handleElementPointerUp}
+              >
+                <button className="pdf-overlay-delete" onClick={e => { e.stopPropagation(); setOverlays(prev => { const n = { ...prev, [currentPage]: (prev[currentPage] || []).filter(x => x.id !== o.id) }; pushHistory(n); return n; }); setSelectedId(null); }}>
+                  <X size={10} />
+                </button>
+                <input
+                  type="text"
+                  value={o.value || ""}
+                  onChange={e => updateOverlay(o.id, { value: e.target.value })}
+                  onPointerDown={e => e.stopPropagation()}
+                  placeholder="Type here..."
+                  autoFocus={selectedId === o.id}
+                  style={{
+                    width: Math.max(80, ((o.value?.length || 0) + 4) * (o.fontSize || 16) * 0.6) + "px",
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                    fontSize: (o.fontSize || 16) + "px",
+                    fontWeight: o.bold ? 700 : 400,
+                    fontStyle: o.italic ? "italic" : "normal",
+                    color: o.fontColor || "#000",
+                    fontFamily: "Helvetica, Arial, sans-serif",
+                    padding: "2px 4px",
+                    caretColor: "var(--accent)",
+                  }}
+                />
+              </div>
+            ))}
+
+            {/* Image & Signature overlays */}
+            {currentPageOverlays.filter(o => o.type === "image" || o.type === "signature").map(o => (
+              <div
+                key={o.id}
+                className={`pdf-overlay-element ${selectedId === o.id ? "selected" : ""}`}
+                style={{
+                  left: `${o.x}%`, top: `${o.y}%`,
+                  width: `${o.width}%`, height: `${o.height}%`,
+                  pointerEvents: mode === "select" ? "auto" : "none",
+                }}
+                onPointerDown={e => handleElementPointerDown(o.id, e)}
+                onPointerMove={handleElementPointerMove}
+                onPointerUp={handleElementPointerUp}
+              >
+                <button className="pdf-overlay-delete" onClick={e => { e.stopPropagation(); setOverlays(prev => { const n = { ...prev, [currentPage]: (prev[currentPage] || []).filter(x => x.id !== o.id) }; pushHistory(n); return n; }); setSelectedId(null); }}>
+                  <X size={10} />
+                </button>
+                <img
+                  src={o.dataUrl || o.signatureDataUrl}
+                  style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }}
+                  alt={o.type === "signature" ? "Signature" : "Stamp"}
+                  draggable={false}
+                />
+                {selectedId === o.id && (
+                  <>
+                    {["nw","ne","sw","se"].map(corner => (
+                      <div key={corner} className={`pdf-resize-handle ${corner}`}
+                        onPointerDown={e => handleResizeStart(corner, o.id, e)}
+                        onPointerMove={handleResizeMove}
+                        onPointerUp={handleResizeEnd}
+                      />
+                    ))}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </Document>
+      </div>
+
+      {/* ═══ Bottom Bar ═══ */}
+      <div className="pdf-bottom-bar">
+        <div className="pdf-page-nav">
+          <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1} title="Previous Page">
+            <ChevronLeft size={14} />
+          </button>
+          <span style={{ minWidth: 80, textAlign: "center", fontWeight: 500 }}>
+            Page {currentPage} of {numPages}
+          </span>
+          <button onClick={() => setCurrentPage(p => Math.min(numPages, p + 1))} disabled={currentPage >= numPages} title="Next Page">
+            <ChevronRight size={14} />
+          </button>
+        </div>
+
+        <div className="pdf-zoom-controls">
+          <button className="pdf-tool-btn" onClick={() => setZoom(z => { const idx = ZOOM_LEVELS.indexOf(z); return idx > 0 ? ZOOM_LEVELS[idx - 1] : z; })}
+            disabled={zoom <= ZOOM_LEVELS[0]} title="Zoom Out">
+            <ZoomOut size={15} />
+          </button>
+          <span style={{ minWidth: 50, textAlign: "center", fontWeight: 500, fontSize: 12 }}>
+            {Math.round(zoom * 100)}%
+          </span>
+          <button className="pdf-tool-btn" onClick={() => setZoom(z => { const idx = ZOOM_LEVELS.indexOf(z); return idx < ZOOM_LEVELS.length - 1 ? ZOOM_LEVELS[idx + 1] : z; })}
+            disabled={zoom >= ZOOM_LEVELS[ZOOM_LEVELS.length - 1]} title="Zoom In">
+            <ZoomIn size={15} />
+          </button>
+        </div>
+
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {resultUrl && (
+            <button className="pdf-tool-btn" onClick={() => { setResultUrl(null); showToast("Ready for more edits"); }} title="Continue Editing">
+              <Pen size={14} /> <span className="pdf-tool-btn-label">Edit More</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ═══ Signature Modal ═══ */}
+      {showSignature && (
+        <div className="pdf-sig-modal-backdrop" onClick={() => { setShowSignature(false); if (mode === "signature") setMode("select"); }}>
+          <div className="pdf-sig-modal" onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: 18, marginBottom: 16 }}>
+              Add Your Signature
+            </h3>
+
+            <div className="pdf-sig-tabs">
+              <button className={`pdf-sig-tab ${sigMode === "draw" ? "active" : ""}`}
+                onClick={() => setSigMode("draw")}>
+                ✏️ Draw
+              </button>
+              <button className={`pdf-sig-tab ${sigMode === "type" ? "active" : ""}`}
+                onClick={() => setSigMode("type")}>
+                ⌨️ Type
+              </button>
+            </div>
+
+            {sigMode === "draw" ? (
+              <>
+                <canvas
+                  ref={sigCanvasRef}
+                  className="pdf-sig-canvas"
+                  width={460}
+                  height={160}
+                  onPointerDown={sigStartDraw}
+                  onPointerMove={sigDraw}
+                  onPointerUp={sigEndDraw}
+                />
+                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                  <button className="pdf-tool-btn" onClick={clearSigCanvas}>
+                    <Eraser size={14} /> Clear
+                  </button>
+                </div>
+              </>
+            ) : (
+              <input
+                type="text"
+                value={sigText}
+                onChange={e => setSigText(e.target.value)}
+                placeholder="Type your name..."
+                style={{
+                  width: "100%",
+                  padding: "16px 20px",
+                  fontSize: 28,
+                  fontFamily: "Georgia, 'Times New Roman', serif",
+                  fontStyle: "italic",
+                  border: "2px dashed var(--border)",
+                  borderRadius: 10,
+                  background: "white",
+                  color: "#000",
+                  textAlign: "center",
+                }}
+              />
+            )}
+
+            <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
+              <button className="btn-outline" style={{ padding: "8px 20px", fontSize: 13 }}
+                onClick={() => { setShowSignature(false); if (mode === "signature") setMode("select"); }}>
+                Cancel
+              </button>
+              <button className="btn-primary" style={{ padding: "8px 20px", fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}
+                onClick={placeSignature}>
+                <Check size={15} /> Place Signature
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ Toast ═══ */}
+      {toast && <div className="pdf-toast" key={toast}>{toast}</div>}
     </div>
+  );
+}
+
+// ─── Toolbar Button Component ───
+function ToolBtn({ icon, label, active, onClick, disabled, title }: {
+  icon: React.ReactNode; label: string; active: boolean;
+  onClick: () => void; disabled?: boolean; title?: string;
+}) {
+  return (
+    <button
+      className={`pdf-tool-btn ${active ? "active" : ""}`}
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+    >
+      {icon}
+      {label && <span className="pdf-tool-btn-label">{label}</span>}
+    </button>
   );
 }
