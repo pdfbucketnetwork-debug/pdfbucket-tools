@@ -35,6 +35,7 @@ interface Overlay {
   fontColor?: string;
   bold?: boolean;
   italic?: boolean;
+  bgWhiteout?: boolean;
   // Draw / eraser
   points?: Point[];
   strokeColor?: string;
@@ -52,6 +53,36 @@ interface Overlay {
 
 type HistoryEntry = {
   overlays: Record<number, Overlay[]>;
+};
+
+// ─── Helper: Wrap Text for PDF Export ───
+const wrapText = (text: string, maxWidth: number, font: any, fontSize: number): string[] => {
+  const paragraphs = text.split("\n");
+  const lines: string[] = [];
+
+  for (const para of paragraphs) {
+    if (!para) {
+      lines.push("");
+      continue;
+    }
+    const words = para.split(/\s+/);
+    let currentLine = "";
+
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const testWidth = font.widthOfTextAtSize(testLine, fontSize);
+      if (testWidth > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+  }
+  return lines;
 };
 
 // ─── Constants ───
@@ -85,12 +116,14 @@ export default function PdfEditor() {
   const [fontColor, setFontColor] = useState("#000000");
   const [fontBold, setFontBold] = useState(false);
   const [fontItalic, setFontItalic] = useState(false);
+  const [textBgWhiteout, setTextBgWhiteout] = useState(false);
 
   // ─── Draw / Shape Options ───
   const [drawColor, setDrawColor] = useState("#000000");
   const [drawWidth, setDrawWidth] = useState(3);
   const [shapeFill, setShapeFill] = useState("transparent");
   const [shapeStroke, setShapeStroke] = useState("#000000");
+  const [eraserType, setEraserType] = useState<"brush" | "box">("brush");
 
   // ─── Highlight ───
   const [highlightColor, setHighlightColor] = useState("#FBBF24");
@@ -241,8 +274,9 @@ export default function PdfEditor() {
       const id = `overlay_${Date.now()}`;
       const newOverlay: Overlay = {
         id, type: "text", page: pageNum,
-        x: coords.x, y: coords.y - 1.2, width: 40, height: 5,
+        x: coords.x, y: coords.y - 1.2, width: 25, height: 6,
         value: "", fontSize, fontColor, bold: fontBold, italic: fontItalic,
+        bgWhiteout: textBgWhiteout,
       };
       const newOverlays = { ...overlays, [pageNum]: [...(overlays[pageNum] || []), newOverlay] };
       setOverlays(newOverlays);
@@ -279,19 +313,48 @@ export default function PdfEditor() {
       return;
     }
 
-    if (mode === "draw" || mode === "eraser") {
+    if (mode === "draw") {
       setIsDrawing(true);
       const id = `overlay_${Date.now()}`;
       setDrawingOverlayId(id);
       const newOverlay: Overlay = {
-        id, type: mode, page: pageNum,
+        id, type: "draw", page: pageNum,
         x: 0, y: 0, width: 100, height: 100,
         points: [coords],
-        strokeColor: mode === "eraser" ? "#FFFFFF" : drawColor,
-        strokeWidth: mode === "eraser" ? 15 : drawWidth,
+        strokeColor: drawColor,
+        strokeWidth: drawWidth,
       };
       const newOverlays = { ...overlays, [pageNum]: [...(overlays[pageNum] || []), newOverlay] };
       setOverlays(newOverlays);
+      e.currentTarget.setPointerCapture(e.pointerId);
+      return;
+    }
+
+    if (mode === "eraser") {
+      setIsDrawing(true);
+      const id = `overlay_${Date.now()}`;
+      setDrawingOverlayId(id);
+      if (eraserType === "box") {
+        setShapeStart(coords);
+        const newOverlay: Overlay = {
+          id, type: "rect", page: pageNum,
+          x: coords.x, y: coords.y, width: 0, height: 0,
+          strokeColor: "#FFFFFF", strokeWidth: 0,
+          fillColor: "#FFFFFF",
+        };
+        const newOverlays = { ...overlays, [pageNum]: [...(overlays[pageNum] || []), newOverlay] };
+        setOverlays(newOverlays);
+      } else {
+        const newOverlay: Overlay = {
+          id, type: "eraser", page: pageNum,
+          x: 0, y: 0, width: 100, height: 100,
+          points: [coords],
+          strokeColor: "#FFFFFF",
+          strokeWidth: 15,
+        };
+        const newOverlays = { ...overlays, [pageNum]: [...(overlays[pageNum] || []), newOverlay] };
+        setOverlays(newOverlays);
+      }
       e.currentTarget.setPointerCapture(e.pointerId);
       return;
     }
@@ -338,7 +401,7 @@ export default function PdfEditor() {
     const coords = getCoords(e, rect);
     const pageNum = currentPage;
 
-    if (mode === "draw" || mode === "eraser") {
+    if (mode === "draw" || (mode === "eraser" && eraserType === "brush")) {
       setOverlays(prev => {
         const pageOverlays = prev[pageNum] || [];
         return {
@@ -353,7 +416,7 @@ export default function PdfEditor() {
       return;
     }
 
-    if (shapeStart && (mode === "highlight" || mode === "rect" || mode === "circle")) {
+    if (shapeStart && (mode === "highlight" || mode === "rect" || mode === "circle" || (mode === "eraser" && eraserType === "box"))) {
       const x = Math.min(shapeStart.x, coords.x);
       const y = Math.min(shapeStart.y, coords.y);
       const w = Math.abs(coords.x - shapeStart.x);
@@ -493,13 +556,26 @@ export default function PdfEditor() {
   };
 
   // ─── Helpers ───
-  const findOverlay = (id: string): Overlay | null => {
+  const findOverlay = useCallback((id: string): Overlay | null => {
     for (const pageOverlays of Object.values(overlays)) {
       const found = pageOverlays.find(o => o.id === id);
       if (found) return found;
     }
     return null;
-  };
+  }, [overlays]);
+
+  useEffect(() => {
+    if (selectedId) {
+      const selected = findOverlay(selectedId);
+      if (selected && selected.type === "text") {
+        setFontSize(selected.fontSize || 16);
+        setFontColor(selected.fontColor || "#000000");
+        setFontBold(!!selected.bold);
+        setFontItalic(!!selected.italic);
+        setTextBgWhiteout(!!selected.bgWhiteout);
+      }
+    }
+  }, [selectedId, findOverlay]);
 
   const updateOverlay = (id: string, updates: Partial<Overlay>) => {
     const overlay = findOverlay(id);
@@ -640,13 +716,28 @@ export default function PdfEditor() {
             const color = hexToRgb(overlay.fontColor || "#000000");
             const fSize = overlay.fontSize || 16;
             const lineHeight = fSize * 1.4;
-            // Support multi-line text
-            const lines = overlay.value.split("\n");
+
+            const w = (overlay.width / 100) * width;
+            const h = (overlay.height / 100) * height;
+
+            // Draw whiteout background block if enabled
+            if (overlay.bgWhiteout) {
+              page.drawRectangle({
+                x: absX,
+                y: absY - h,
+                width: w,
+                height: h,
+                color: rgb(1, 1, 1),
+              });
+            }
+
+            // Wrap and draw text lines to fit the bounding box width
+            const lines = wrapText(overlay.value, w - 8, font, fSize);
             lines.forEach((line, lineIdx) => {
               if (!line) return; // skip empty lines but keep spacing
               page.drawText(line, {
-                x: absX,
-                y: absY - fSize - (lineIdx * lineHeight),
+                x: absX + 4,
+                y: absY - fSize - 4 - (lineIdx * lineHeight),
                 size: fSize,
                 font,
                 color: rgb(color.r, color.g, color.b),
@@ -681,10 +772,10 @@ export default function PdfEditor() {
               y: absY - h,
               width: w,
               height: h,
-              borderColor: rgb(color.r, color.g, color.b),
-              borderWidth: overlay.strokeWidth || 2,
+              borderColor: (overlay.strokeWidth === 0 || overlay.strokeColor === "transparent") ? undefined : rgb(color.r, color.g, color.b),
+              borderWidth: overlay.strokeWidth ?? 2,
               color: fillC ? rgb(fillC.r, fillC.g, fillC.b) : undefined,
-              opacity: fillC ? 0.3 : undefined,
+              opacity: fillC ? (overlay.fillColor === "#FFFFFF" ? 1.0 : 0.3) : undefined,
             });
           }
 
@@ -944,6 +1035,18 @@ export default function PdfEditor() {
             title="Italic">
             <Italic size={15} />
           </button>
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+          <button className={`pdf-tool-btn ${textBgWhiteout ? "active" : ""}`}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 8px" }}
+            onClick={() => {
+              const next = !textBgWhiteout;
+              setTextBgWhiteout(next);
+              if (selectedId) updateOverlay(selectedId, { bgWhiteout: next });
+            }}
+            title="Whiteout Background (covers/erases text underneath on the PDF)">
+            <Eraser size={14} />
+            <span style={{ fontSize: 12, fontWeight: 500 }}>Whiteout Behind</span>
+          </button>
         </div>
       )}
 
@@ -960,12 +1063,31 @@ export default function PdfEditor() {
               </div>
             </>
           )}
-          <label>
-            Width
-            <select value={drawWidth} onChange={e => setDrawWidth(Number(e.target.value))}>
-              {STROKE_WIDTHS.map(w => <option key={w} value={w}>{w}px</option>)}
-            </select>
-          </label>
+          {mode === "eraser" && (
+            <>
+              <label>Type</label>
+              <div style={{ display: "flex", gap: 4 }}>
+                <button className={`pdf-tool-btn ${eraserType === "brush" ? "active" : ""}`}
+                  style={{ fontSize: 12, padding: "3px 10px" }}
+                  onClick={() => setEraserType("brush")} title="Brush Eraser (freehand white lines)">
+                  Brush
+                </button>
+                <button className={`pdf-tool-btn ${eraserType === "box" ? "active" : ""}`}
+                  style={{ fontSize: 12, padding: "3px 10px" }}
+                  onClick={() => setEraserType("box")} title="Box Eraser (draw solid white boxes to cover paragraphs)">
+                  Box/Whiteout
+                </button>
+              </div>
+            </>
+          )}
+          {(mode === "draw" || (mode === "eraser" && eraserType === "brush")) && (
+            <label>
+              Width
+              <select value={drawWidth} onChange={e => setDrawWidth(Number(e.target.value))}>
+                {STROKE_WIDTHS.map(w => <option key={w} value={w}>{w}px</option>)}
+              </select>
+            </label>
+          )}
         </div>
       )}
 
@@ -980,6 +1102,7 @@ export default function PdfEditor() {
               Fill
               <select value={shapeFill} onChange={e => setShapeFill(e.target.value)}>
                 <option value="transparent">None</option>
+                <option value="#FFFFFF">White (Whiteout)</option>
                 <option value="#EF4444">Red</option>
                 <option value="#3B82F6">Blue</option>
                 <option value="#10B981">Green</option>
@@ -1116,9 +1239,9 @@ export default function PdfEditor() {
                 style={{
                   left: `${o.x}%`, top: `${o.y}%`,
                   width: `${o.width}%`, height: `${o.height}%`,
-                  border: `${o.strokeWidth || 2}px solid ${o.strokeColor || "#000"}`,
+                  border: o.strokeWidth === 0 ? "none" : `${o.strokeWidth ?? 2}px solid ${o.strokeColor || "#000"}`,
                   borderRadius: o.type === "circle" ? "50%" : "0",
-                  background: o.fillColor && o.fillColor !== "transparent" ? `${o.fillColor}4D` : "transparent",
+                  background: o.fillColor === "#FFFFFF" ? "#FFFFFF" : (o.fillColor && o.fillColor !== "transparent" ? `${o.fillColor}4D` : "transparent"),
                   pointerEvents: mode === "select" ? "auto" : "none",
                 }}
                 onPointerDown={e => handleElementPointerDown(o.id, e)}
@@ -1176,6 +1299,10 @@ export default function PdfEditor() {
                     position: "absolute",
                     left: `${o.x}%`,
                     top: `${o.y}%`,
+                    width: `${o.width}%`,
+                    height: `${o.height}%`,
+                    background: o.bgWhiteout ? "#FFFFFF" : "transparent",
+                    border: isEditing ? "1px dashed #1A73E8" : (o.bgWhiteout ? "1px solid #E5E7EB" : "none"),
                     cursor: mode === "select" ? "move" : "text",
                     pointerEvents: mode === "select" || mode === "text" ? "auto" : "none",
                     zIndex: isEditing ? 12 : 10,
@@ -1232,14 +1359,9 @@ export default function PdfEditor() {
                         el.dataset.focused = "1";
                       }
                     }}
-                    rows={1}
                     style={{
-                      width: Math.max(120, Math.max(
-                        ...((o.value || "").split("\n").map(line => line.length)),
-                        1
-                      ) * (o.fontSize || 16) * 0.62 + 24) + "px",
-                      minHeight: (o.fontSize || 16) * 1.5 + "px",
-                      height: "auto",
+                      width: "100%",
+                      height: "100%",
                       background: "transparent",
                       border: "none",
                       outline: "none",
@@ -1251,19 +1373,24 @@ export default function PdfEditor() {
                       fontStyle: o.italic ? "italic" : "normal",
                       color: o.fontColor || "#000",
                       fontFamily: "Helvetica, Arial, sans-serif",
-                      padding: "0 2px",
+                      padding: "4px",
                       margin: 0,
                       caretColor: "#1A73E8",
                       letterSpacing: "0.01em",
                       wordBreak: "break-word",
                     }}
-                    onInput={e => {
-                      // Auto-grow textarea height
-                      const el = e.currentTarget;
-                      el.style.height = "auto";
-                      el.style.height = el.scrollHeight + "px";
-                    }}
                   />
+                  {selectedId === o.id && (
+                    <>
+                      {["nw","ne","sw","se"].map(corner => (
+                        <div key={corner} className={`pdf-resize-handle ${corner}`}
+                          onPointerDown={e => handleResizeStart(corner, o.id, e)}
+                          onPointerMove={handleResizeMove}
+                          onPointerUp={handleResizeEnd}
+                        />
+                      ))}
+                    </>
+                  )}
                 </div>
               );
             })}
