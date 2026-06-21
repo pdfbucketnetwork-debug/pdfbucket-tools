@@ -133,68 +133,141 @@ export default async function ToolPage(props: { params: Promise<{ slug: string }
           ← Back to Tools
         </Link>
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 32 }}>
+        {/* Header & Title */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
           <div className="icon-box" style={{ background: `${tool.color}18`, marginBottom: 0, width: 56, height: 56, fontSize: 28, borderRadius: 16 }}>
             {tool.icon}
           </div>
           <div>
-            <h1 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "2rem", margin: 0, marginBottom: 4, letterSpacing: "-0.01em" }}>
+            <h1 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "2.2rem", margin: 0, marginBottom: 4, letterSpacing: "-0.02em" }}>
               {tool.label}
             </h1>
-            <p style={{ color: "var(--muted)", fontSize: 15, margin: 0 }}>{tool.desc}</p>
+            <p style={{ color: "var(--muted)", fontSize: 16, margin: 0 }}>{tool.desc}</p>
           </div>
         </div>
 
-        {/* Tool interactive area */}
-        <div style={{
-          background: tool.id === "pdf-editor" ? "transparent" : "var(--surface)",
-          border: tool.id === "pdf-editor" ? "none" : "1px solid var(--border)",
-          borderRadius: 24,
-          padding: tool.id === "pdf-editor" ? 0 : 32,
-          maxWidth: tool.id === "pdf-editor" ? "100%" : 640,
-          marginBottom: 64,
-          boxShadow: tool.id === "pdf-editor" ? "none" : "0 20px 40px -12px rgba(0,0,0,0.05)"
-        }}>
-          <ToolRenderer id={tool.id} />
+        {/* Introduction Section Above the Tool UI */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 32, marginBottom: 48, maxWidth: 900 }}>
+          <div style={{ lineHeight: 1.8, fontSize: 16, color: "var(--text)" }}>
+            <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "1.5rem", fontWeight: 600, marginBottom: 12, color: "var(--text)" }}>
+              {tool.content.h2}
+            </h2>
+            {tool.content.paragraphs.map((p, i) => (
+              <p key={i} style={{ marginBottom: 16, color: "var(--muted)" }}>{p}</p>
+            ))}
+          </div>
+
+          {/* Key Features List */}
+          <div style={{ 
+            background: "var(--surface)", border: "1px solid var(--border)", 
+            borderRadius: 20, padding: 24, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.03)" 
+          }}>
+            <h3 style={{ fontFamily: "Outfit, sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 16, marginTop: 0, color: "var(--text)" }}>
+              Key Features
+            </h3>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 12 }}>
+              {tool.content.features.map((feature, i) => (
+                <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 14, color: "var(--muted)", lineHeight: 1.5 }}>
+                  <span style={{ color: tool.color, fontWeight: "bold" }}>✓</span>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
-        {/* Semantic Content for GEO / AEO */}
-        <article style={{ maxWidth: 800, lineHeight: 1.7, color: "var(--text)" }}>
-          <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "1.8rem", fontWeight: 700, marginBottom: 24, letterSpacing: "-0.01em" }}>
-            {tool.content.h2}
+        {/* Interactive Tool Area */}
+        <div style={{ marginBottom: 64 }}>
+          <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "1.4rem", fontWeight: 600, marginBottom: 16, color: "var(--text)" }}>
+            Interactive Online Tool
           </h2>
-          {tool.content.paragraphs.map((p, i) => (
-            <p key={i} style={{ marginBottom: 20, color: "var(--muted)", fontSize: 16 }}>{p}</p>
-          ))}
+          <div style={{
+            background: tool.id === "pdf-editor" ? "transparent" : "var(--surface)",
+            border: tool.id === "pdf-editor" ? "none" : "1px solid var(--border)",
+            borderRadius: 24,
+            padding: tool.id === "pdf-editor" ? 0 : 32,
+            maxWidth: tool.id === "pdf-editor" ? "100%" : 640,
+            boxShadow: tool.id === "pdf-editor" ? "none" : "0 20px 40px -12px rgba(0,0,0,0.05)"
+          }}>
+            <ToolRenderer id={tool.id} />
+          </div>
+        </div>
+
+        {/* Detailed Guidelines & Use Cases Below the Tool */}
+        <article style={{ maxWidth: 900, lineHeight: 1.7, color: "var(--text)", marginTop: 64 }}>
           
           {/* Step-by-Step Instructions */}
           {tool.content.steps && (
-            <div style={{ marginTop: 40, marginBottom: 40 }}>
-              <ol style={{ paddingLeft: 24, margin: 0, display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ marginBottom: 48 }}>
+              <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "1.6rem", fontWeight: 700, marginBottom: 20, letterSpacing: "-0.01em" }}>
+                How to Use the {tool.label}
+              </h2>
+              <ol style={{ paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 16 }}>
                 {tool.content.steps.map((step, i) => (
-                  <li key={i} style={{ color: "var(--muted)", fontSize: 16, paddingLeft: 8 }}>
-                    <strong style={{ color: "var(--text)", fontWeight: 600 }}>{step.name}:</strong> {step.text}
+                  <li key={i} style={{ 
+                    display: "flex", gap: 16, background: "var(--surface)", 
+                    border: "1px solid var(--border)", borderRadius: 16, padding: 20 
+                  }}>
+                    <div style={{
+                      background: `${tool.color}15`, color: tool.color, fontWeight: 700,
+                      width: 32, height: 32, borderRadius: "50%", display: "flex",
+                      alignItems: "center", justifyContent: "center", flexShrink: 0
+                    }}>
+                      {i + 1}
+                    </div>
+                    <div>
+                      <strong style={{ color: "var(--text)", fontSize: 16, display: "block", marginBottom: 4 }}>{step.name}</strong>
+                      <span style={{ color: "var(--muted)", fontSize: 15 }}>{step.text}</span>
+                    </div>
                   </li>
                 ))}
               </ol>
             </div>
           )}
-          
-          <hr style={{ border: 0, borderTop: "1px solid var(--border)", margin: "48px 0" }} />
-          
-          <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "1.8rem", fontWeight: 700, marginBottom: 32, letterSpacing: "-0.01em" }}>
-            Frequently Asked Questions
-          </h2>
-          
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {tool.content.faq.map((f, i) => (
-              <div key={i} style={{ padding: 24, border: "1px solid var(--border)", borderRadius: 16, background: "var(--surface)" }}>
-                <h3 style={{ fontFamily: "Outfit, sans-serif", fontSize: 17, fontWeight: 600, marginBottom: 8, marginTop: 0, color: "var(--text)" }}>{f.q}</h3>
-                <p style={{ color: "var(--muted)", fontSize: 15, margin: 0 }}>{f.a}</p>
-              </div>
-            ))}
+
+          {/* Common Use Cases Section */}
+          <div style={{ marginBottom: 48 }}>
+            <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "1.6rem", fontWeight: 700, marginBottom: 20, letterSpacing: "-0.01em" }}>
+              Common Use Cases
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
+              {tool.content.useCases.map((useCase, i) => (
+                <div key={i} style={{ 
+                  border: "1px solid var(--border)", borderRadius: 16, padding: 24, 
+                  background: "var(--surface)", display: "flex", flexDirection: "column", gap: 8 
+                }}>
+                  <h3 style={{ fontFamily: "Outfit, sans-serif", fontSize: 16, fontWeight: 600, margin: 0, color: "var(--text)" }}>
+                    {useCase.title}
+                  </h3>
+                  <p style={{ color: "var(--muted)", fontSize: 14, margin: 0, lineHeight: 1.6 }}>
+                    {useCase.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
+
+          <hr style={{ border: 0, borderTop: "1px solid var(--border)", margin: "40px 0" }} />
+
+          {/* Frequently Asked Questions */}
+          <div>
+            <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "1.6rem", fontWeight: 700, marginBottom: 24, letterSpacing: "-0.01em" }}>
+              Frequently Asked Questions
+            </h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {tool.content.faq.map((f, i) => (
+                <div key={i} style={{ padding: 24, border: "1px solid var(--border)", borderRadius: 16, background: "var(--surface)" }}>
+                  <h3 style={{ fontFamily: "Outfit, sans-serif", fontSize: 16, fontWeight: 600, marginBottom: 8, marginTop: 0, color: "var(--text)" }}>
+                    {f.q}
+                  </h3>
+                  <p style={{ color: "var(--muted)", fontSize: 14, margin: 0, lineHeight: 1.6 }}>
+                    {f.a}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </article>
       </section>
     </>

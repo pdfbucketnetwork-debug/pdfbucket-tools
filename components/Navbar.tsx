@@ -9,8 +9,13 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
+    const handleScroll = () => {
+      const top = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+      setScrolled(top > 10);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Run on mount to check initial scroll position
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 

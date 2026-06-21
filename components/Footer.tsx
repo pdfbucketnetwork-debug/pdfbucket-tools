@@ -43,7 +43,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div style={{ borderTop: "1px solid var(--border)", paddingTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
           <p style={{ color: "var(--muted)", fontSize: 12 }}>
-            © 2025 pdfbucket.online · All tools free forever · Made with ❤️
+            © 2026 pdfbucket.online · All tools free forever · Made with ❤️
           </p>
           <p style={{ color: "var(--muted)", fontSize: 12 }}>
             🔒 Your files never leave your browser

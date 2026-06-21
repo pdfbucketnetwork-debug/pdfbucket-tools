@@ -42,64 +42,50 @@ export default function FAQ({ items, title = "Frequently Asked Questions" }: FAQ
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {items.map((item, i) => (
-          <div
-            key={i}
-            style={{
-              background: "var(--surface)",
-              border: `1px solid ${open === i ? "var(--accent)" : "var(--border)"}`,
-              borderRadius: 14,
-              overflow: "hidden",
-              transition: "border-color 0.2s",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setOpen(open === i ? null : i)}
-              style={{
-                width: "100%",
-                background: "none",
-                border: "none",
-                padding: "20px 24px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 16,
-                cursor: "pointer",
-                textAlign: "left",
-                WebkitTapHighlightColor: "transparent",
-                touchAction: "manipulation",
-              }}
+        {items.map((item, i) => {
+          const isOpen = open === i;
+          return (
+            <details
+              key={i}
+              className="faq-details"
+              open={isOpen}
             >
-              <span style={{
-                fontFamily: "Syne, sans-serif",
-                fontWeight: 700,
-                fontSize: 15,
-                color: "var(--text)",
-                flex: 1,
-              }}>
-                {item.q}
-              </span>
-              <span style={{
-                color: "var(--accent)",
-                fontSize: 20,
-                fontWeight: 300,
-                flexShrink: 0,
-                transform: open === i ? "rotate(45deg)" : "rotate(0deg)",
-                transition: "transform 0.2s",
-                display: "inline-block",
-              }}>
-                +
-              </span>
-            </button>
+              <summary
+                onClick={(e) => {
+                  e.preventDefault();
+                  setOpen(isOpen ? null : i);
+                }}
+                style={{
+                  width: "100%",
+                  background: "none",
+                  border: "none",
+                  padding: "20px 24px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  WebkitTapHighlightColor: "transparent",
+                  touchAction: "manipulation",
+                  fontFamily: "Syne, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 15,
+                  color: "var(--text)",
+                }}
+              >
+                <span style={{ flex: 1 }}>{item.q}</span>
+                <span className="faq-icon">+</span>
+              </summary>
 
-            {open === i && (
-              <div style={{ padding: "0 24px 20px", color: "var(--muted)", fontSize: 14, lineHeight: 1.7 }}>
-                {item.a}
+              <div className="faq-grid">
+                <div className="faq-content">
+                  {item.a}
+                </div>
               </div>
-            )}
-          </div>
-        ))}
+            </details>
+          );
+        })}
       </div>
     </section>
   );

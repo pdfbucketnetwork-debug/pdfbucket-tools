@@ -269,6 +269,42 @@ export default function PdfEditor() {
     }
 
     if (mode === "text") {
+      const target = e.target as HTMLElement;
+      const textSpan = target.closest('.react-pdf__Page__textLayer span, .react-pdf__Page__textLayer div');
+      if (textSpan && textSpan.textContent && textSpan.textContent.trim()) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const pageWrapper = e.currentTarget;
+        const pageRect = pageWrapper.getBoundingClientRect();
+        const spanRect = textSpan.getBoundingClientRect();
+
+        const x = ((spanRect.left - pageRect.left) / pageRect.width) * 100;
+        const y = ((spanRect.top - pageRect.top) / pageRect.height) * 100;
+        const w = (spanRect.width / pageRect.width) * 100;
+        const h = (spanRect.height / pageRect.height) * 100;
+
+        let fSize = 16;
+        const styleFontSize = window.getComputedStyle(textSpan).fontSize;
+        if (styleFontSize) {
+          fSize = parseFloat(styleFontSize) / zoom;
+        }
+
+        const id = `overlay_${Date.now()}`;
+        const newOverlay: Overlay = {
+          id, type: "text", page: pageNum,
+          x: x - 0.2, y: y - 0.2, width: w + 1.5, height: h + 0.4,
+          value: textSpan.textContent.trim(), fontSize: Math.round(fSize), fontColor: "#000000",
+          bgWhiteout: true,
+        };
+
+        const newOverlays = { ...overlays, [pageNum]: [...(overlays[pageNum] || []), newOverlay] };
+        setOverlays(newOverlays);
+        pushHistory(newOverlays);
+        setSelectedId(id);
+        return;
+      }
+
       // Deselect previous text if clicking elsewhere
       setSelectedId(null);
       const id = `overlay_${Date.now()}`;
@@ -1160,7 +1196,7 @@ export default function PdfEditor() {
           }
         >
           <div
-            className="pdf-page-wrapper"
+            className={`pdf-page-wrapper mode-${mode}`}
             ref={pageContainerRef}
             onPointerDown={handleCanvasPointerDown}
             onPointerMove={handleCanvasPointerMove}
@@ -1169,7 +1205,7 @@ export default function PdfEditor() {
           >
             <Page
               pageNumber={currentPage}
-              renderTextLayer={false}
+              renderTextLayer={true}
               renderAnnotationLayer={false}
               width={pageWidth}
             />

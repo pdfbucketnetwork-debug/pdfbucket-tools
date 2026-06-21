@@ -15,10 +15,8 @@ export const metadata: Metadata = {
   },
   description: "Free browser-based tools to compress, resize, convert, and process images. No signup. No file uploads. 100% private. Works on any device.",
   keywords: [
-    "image compressor online free", "resize image online", "convert png to jpeg",
-    "qr code generator free", "ocr text extractor", "color palette from image",
-    "compress image without losing quality", "free online image tools", "browser image tools",
-    "image tools no signup",
+    "PDFBucket", "online image tools", "browser-based file tools",
+    "image compressor", "PDF merger", "format converter", "QR code generator"
   ],
   authors: [{ name: "PDFBucket Team", url: DOMAIN }],
   creator: "PDFBucket",
@@ -41,7 +39,7 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
   },
   verification: {
-    google: "YOUR_GOOGLE_VERIFICATION_CODE",
+    google: "googlebcfc0e430cf87179",
     other: {
       "google-adsense-account": "ca-pub-1573782121844686",
     },

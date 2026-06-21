@@ -17,7 +17,7 @@
   --text: #202124;
   --muted: #5F6368;
   --success: #188038;
-  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-bg: rgba(255, 255, 255, 0.96);
   --glass-hover: rgba(255, 255, 255, 0.95);
   --accent-hover-bg: rgba(26, 115, 232, 0.08);
 }
@@ -36,7 +36,7 @@
   --text: #E8EAED;
   --muted: #9AA0A6;
   --success: #81C995;
-  --glass-bg: rgba(32, 33, 36, 0.85);
+  --glass-bg: rgba(32, 33, 36, 0.96);
   --glass-hover: rgba(32, 33, 36, 0.95);
   --accent-hover-bg: rgba(138, 180, 248, 0.12);
 }
@@ -761,4 +761,68 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
   .pdf-sub-toolbar { padding: 4px 8px; }
   .pdf-canvas-area { padding: 12px; }
   .pdf-bottom-bar { padding: 4px 10px; }
+}
+
+/* PDF text layer interactive rules for inline text editing */
+.react-pdf__Page__textLayer {
+  pointer-events: none;
+}
+.pdf-page-wrapper.mode-text .react-pdf__Page__textLayer {
+  pointer-events: auto;
+}
+.pdf-page-wrapper.mode-text .react-pdf__Page__textLayer span,
+.pdf-page-wrapper.mode-text .react-pdf__Page__textLayer div {
+  cursor: text !important;
+}
+
+/* FAQ Details Native Accordion */
+.faq-details {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.faq-details summary::-webkit-details-marker {
+  display: none;
+}
+.faq-details summary {
+  list-style: none;
+  outline: none;
+}
+.faq-details[open] {
+  border-color: var(--accent) !important;
+}
+.faq-details .faq-grid {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.faq-details[open] .faq-grid {
+  grid-template-rows: 1fr;
+}
+.faq-details .faq-content {
+  min-height: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  padding: 0 24px 0;
+  opacity: 0;
+  transition: opacity 0.25s ease-in-out, padding 0.25s ease-in-out;
+}
+.faq-details[open] .faq-content {
+  padding: 0 24px 20px;
+  opacity: 1;
+}
+.faq-details .faq-icon {
+  color: var(--accent);
+  font-size: 20px;
+  font-weight: 300;
+  flex-shrink: 0;
+  display: inline-block;
+  transition: transform 0.2s;
+}
+.faq-details[open] .faq-icon {
+  transform: rotate(45deg);
 }
