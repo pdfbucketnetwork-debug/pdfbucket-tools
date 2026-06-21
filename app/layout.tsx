@@ -73,7 +73,7 @@ const organizationSchema = {
   "contactPoint": {
     "@type": "ContactPoint",
     "contactType": "customer support",
-    "url": `${DOMAIN}/blog`,
+    "url": `${DOMAIN}/contact`,
   },
 };
 

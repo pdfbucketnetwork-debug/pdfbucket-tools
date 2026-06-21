@@ -8,8 +8,21 @@ export const metadata: Metadata = {
 };
 
 export default function AboutPage() {
+  const aboutSchema = {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "About Us",
+    "description": "Learn more about PDFBucket, our founding story, local-first privacy-focused architecture, and our mission to provide secure web tools.",
+    "url": "https://pdfbucket.online/about"
+  };
+
   return (
     <div style={{ background: "var(--bg)", color: "var(--text)" }}>
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutSchema) }}
+      />
       
       {/* Hero Section */}
       <section style={{ padding: "140px 24px 80px", textAlign: "center", background: "var(--bg2)", borderBottom: "1px solid var(--border)" }}>

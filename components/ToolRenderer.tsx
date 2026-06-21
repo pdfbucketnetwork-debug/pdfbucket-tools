@@ -15,7 +15,6 @@ const toolComponents: Record<string, any> = {
   "bg-remover": dynamic(() => import("./tools/BackgroundRemover"), { ssr: false, loading: ToolLoading }),
   "doc-to-pdf": dynamic(() => import("./tools/DocumentToPdf"), { ssr: false, loading: ToolLoading }),
   "merge-pdf": dynamic(() => import("./tools/PdfMerge"), { ssr: false, loading: ToolLoading }),
-  "pdf-editor": dynamic(() => import("./tools/PdfEditor"), { ssr: false, loading: ToolLoading }),
 };
 
 export default function ToolRenderer({ id }: { id: string }) {

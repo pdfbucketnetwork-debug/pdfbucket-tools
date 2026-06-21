@@ -505,50 +505,6 @@ export const toolsData: ToolData[] = [
         "Encrypted File Support: Allows merging of unlocked, standard PDF files directly."
       ]
     }
-  },
-  {
-    id: "pdf-editor",
-    slug: "pdf-editor",
-    icon: "🖊️",
-    label: "Edit PDF",
-    desc: "Add text and images to your PDFs",
-    color: "#eab308",
-    tag: "New",
-    seo: {
-      title: "Free PDF Editor | Add Text and Images to PDF Online",
-      description: "Edit PDF documents by stamping custom text and uploading images. Add watermarks and annotations natively in your browser.",
-      keywords: ["PDF editor", "annotate PDF online", "add text signature to PDF"],
-    },
-    content: {
-      h2: "How to Add Text and Images to a PDF",
-      paragraphs: [
-        "Stamping watermarks or adding signature images to a PDF is a daily office requirement. Our PDF Editor makes it fast and secure to annotate your documents.",
-        "Unlike complex editors, this tool runs entirely on your device. You can stamp text or overlay images onto your PDF without uploading files to a third-party server.",
-        "The editor adds annotations at the vector level, keeping text crisp and vector-based in the downloaded document copies."
-      ],
-      steps: [
-        { name: "Upload PDF", text: "Select the PDF document you want to edit." },
-        { name: "Choose Overlay", text: "Select whether you want to add a text overlay or upload an image." },
-        { name: "Apply & Download", text: "Click apply to instantly stamp your overlay onto the PDF and download the modified file." }
-      ],
-      faq: [
-        { q: "Does this alter my original file?", a: "No, your original file remains untouched. The tool generates a brand new edited copy for you to download." },
-        { q: "Can I edit the existing typed text in my PDF?", a: "To ensure 100% privacy and run without a backend server, this tool supports *adding* new text and images (overlaying/stamping), rather than rewriting existing embedded fonts." },
-        { q: "Is the edited PDF high quality?", a: "Yes, the tool natively edits the PDF structure so text remains crisp and vector-based." },
-        { q: "Can I add multiple overlays?", a: "Yes. You can add multiple text blocks or images and place them exactly where you need them on the PDF layout." }
-      ],
-      useCases: [
-        { title: "Stamp Official Watermarks", desc: "Stamp custom status markers like 'DRAFT', 'CONFIDENTIAL', or 'APPROVED' across sheets." },
-        { title: "Insert Signature Overlays", desc: "Upload and place PNG signature cutouts onto contract signature areas easily." },
-        { title: "Annotating Report Sheets", desc: "Overlay correction notes, date stamps, or descriptive remarks onto PDF layouts." }
-      ],
-      features: [
-        "Direct PDF Byte Stamping: Interjects new graphics and fonts directly into document matrices.",
-        "On-Device Signature Tools: Integrate local png signatures onto forms with absolute confidentiality.",
-        "Drag & Drop Positioning: Move overlays freely and control scaling dimensions easily.",
-        "Instant Local Exports: Build and download modified PDF copies instantly without server waiting times."
-      ]
-    }
   }
 ];
 

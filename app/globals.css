@@ -546,17 +546,18 @@ select:focus, input[type="text"]:focus, input[type="number"]:focus {
 
 .pdf-resize-handle {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  background: white;
-  border: 2px solid var(--accent);
-  border-radius: 2px;
+  width: 7px;
+  height: 7px;
+  background: #1A73E8;
+  border: 1px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
   z-index: 15;
 }
-.pdf-resize-handle.nw { top: -5px; left: -5px; cursor: nw-resize; }
-.pdf-resize-handle.ne { top: -5px; right: -5px; cursor: ne-resize; }
-.pdf-resize-handle.sw { bottom: -5px; left: -5px; cursor: sw-resize; }
-.pdf-resize-handle.se { bottom: -5px; right: -5px; cursor: se-resize; }
+.pdf-resize-handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
+.pdf-resize-handle.ne { top: -4px; right: -4px; cursor: ne-resize; }
+.pdf-resize-handle.sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+.pdf-resize-handle.se { bottom: -4px; right: -4px; cursor: se-resize; }
 
 .pdf-overlay-delete {
   position: absolute;
